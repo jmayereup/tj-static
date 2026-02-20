@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { ghostClient } from '../../lib/ghost';
+import { downloadGhostAsset, downloadGhostHtmlAssets } from '../../utils/downloadGhostAsset';
 
 export async function getStaticPaths() {
   const posts = await ghostClient.posts.browse({ limit: "all", include: ['tags'] });
@@ -10,7 +11,16 @@ export async function getStaticPaths() {
   }));
 }
 
-const { post } = Astro.props;
+const { post: initialPost } = Astro.props;
+const post = { ...initialPost };
+
+if (post.feature_image) {
+    post.feature_image = await downloadGhostAsset(post.feature_image, post.slug);
+}
+
+if (post.html) {
+    post.html = await downloadGhostHtmlAssets(post.html, post.slug);
+}
 
 // Find if any tags require a specific web component script
 const tagSlugs = post.tags?.map(t => t.slug) || [];

@@ -4,6 +4,7 @@ import { ghostClient } from '../../../../lib/ghost';
 import { LANGUAGES, CATEGORY_FILTERS } from '../../../../utils/tags';
 import WorksheetFilter from '../../../../components/WorksheetFilter.astro';
 import Pagination from '../../../../components/Pagination.astro';
+import { downloadGhostAsset } from '../../../../utils/downloadGhostAsset';
 
 export async function getStaticPaths({ paginate }: any) {
   const allPaths: any[] = [];
@@ -17,6 +18,13 @@ export async function getStaticPaths({ paginate }: any) {
           filter: `tag:${lang}`,
           include: ['tags']
       });
+      posts = await Promise.all(posts.map(async (post: any) => {
+        let feature_image = post.feature_image;
+        if (feature_image) {
+          feature_image = await downloadGhostAsset(feature_image, post.slug);
+        }
+        return { ...post, feature_image };
+      }));
     } catch (e) {
       console.error(`Failed to fetch Ghost posts for ${lang}`, e);
     }
