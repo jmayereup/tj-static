@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { pb } from '../../lib/pocketbase';
+import { downloadAsset } from '../../utils/downloadAsset';
 
 export async function getStaticPaths() {
   try {
@@ -16,6 +17,25 @@ export async function getStaticPaths() {
 }
 
 const { worksheet } = Astro.props as { worksheet: any };
+
+let content = typeof worksheet.content === 'string' ? JSON.parse(worksheet.content || '{}') : (worksheet.content || {});
+
+let imageUrl = worksheet.image ? pb.files.getURL(worksheet, worksheet.image) : undefined;
+if (imageUrl) {
+  imageUrl = await downloadAsset(imageUrl, worksheet.id, worksheet.image);
+}
+
+let audioFileUrl = worksheet.audioFile ? pb.files.getURL(worksheet, worksheet.audioFile) : undefined;
+if (audioFileUrl) {
+  audioFileUrl = await downloadAsset(audioFileUrl, worksheet.id, worksheet.audioFile);
+}
+
+const parsedLesson = {
+  ...worksheet,
+  content,
+  imageUrl,
+  audioFileUrl
+};
 ---
 <Layout title={`${worksheet?.title || 'App'} | Teacher Jake App`} currentLang="english">
   <div class="mb-6 pb-6 border-b border-slate-200">
@@ -32,10 +52,18 @@ const { worksheet } = Astro.props as { worksheet: any };
       <p class="text-slate-600 mb-4">This data was statically pulled from PocketBase at build time. It is completely decoupled from the database now.</p>
     </div>
 
-    <!-- Here is where you would normally mount your React components (using an Astro React integration) -->
-    <!-- Or drop your Web Components passing the lesson data as props -->
-    <div class="bg-emerald-50 text-emerald-900 p-6 rounded-xl overflow-x-auto text-sm border border-emerald-100">
-      <pre><code>{JSON.stringify(worksheet, null, 2)}</code></pre>
-    </div>
+    <!-- Web Component Wrapper -->
+    <tj-worksheet data-lesson={JSON.stringify(parsedLesson)}></tj-worksheet>
   </article>
 </Layout>
+
+<script is:inline>
+  // Ensure the script is only loaded when component is used
+  if (!customElements.get('tj-worksheet')) {
+     const script = document.createElement('script');
+     // The user will provide the final CDN URL later, temporary placeholder
+     script.src = 'https://jmayereup.github.io/tj-components/dist/tj-worksheet.js'; 
+     script.defer = true;
+     document.head.appendChild(script);
+  }
+</script>

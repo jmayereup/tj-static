@@ -1,0 +1,31 @@
+---
+import { CATEGORY_FILTERS } from '../utils/tags';
+
+const { currentLang, currentTag = 'all' } = Astro.props;
+---
+<div class="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar mb-8">
+  {CATEGORY_FILTERS.map(filter => {
+    const isAll = filter.id === 'all';
+    const isWorksheets = filter.id === 'worksheets';
+    const isActive = currentTag === filter.id;
+    // Base URL for the language (e.g. /english)
+    // If it's 'all', we just link to /english
+    // If it's 'worksheets', link to /english/worksheets
+    let href = `/${currentLang}/tag/${filter.id}`;
+    if (isAll) href = `/${currentLang}`;
+    if (isWorksheets) href = `/${currentLang}/worksheets`;
+
+    return (
+      <a 
+        href={href}
+        class={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+          isActive 
+            ? 'bg-[#00a67d] text-white shadow-sm border border-[#00a67d]' 
+            : 'bg-white text-[#4a5568] border border-[#e2e8f0] hover:border-[#cbd5e1]'
+        }`}
+      >
+        {filter.label}
+      </a>
+    );
+  })}
+</div>
