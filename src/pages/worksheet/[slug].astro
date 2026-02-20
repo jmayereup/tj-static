@@ -1,0 +1,93 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { ghostClient } from '../../lib/ghost';
+
+export async function getStaticPaths() {
+  const posts = await ghostClient.posts.browse({ limit: "all", include: ['tags'] });
+  return posts.map(post => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+}
+
+const { post } = Astro.props;
+
+// Find if any tags require a specific web component script
+const tagSlugs = post.tags?.map(t => t.slug) || [];
+const tagClassList = tagSlugs.map(slug => `tag-${slug}`).join(' ');
+
+// Find language for highlighting navigation
+let currentLang = 'english';
+const supportedLangs = ['english', 'french', 'german', 'spanish'];
+for (const lang of supportedLangs) {
+  if (tagSlugs.includes(lang)) {
+    currentLang = lang;
+    break;
+  }
+}
+
+// Script Mapping based on tagging
+const scriptMap: Record<string, string> = {
+    'information-gap': 'https://blog.teacherjake.com/apps/scripts/tj/tj-info-gap.js',
+    'book': 'https://blog.teacherjake.com/apps/scripts/tj/tj-chapter-book.js',
+    'quiz': 'https://blog.teacherjake.com/apps/scripts/tj/tj-quiz-element.js',
+    'speed-review': 'https://blog.teacherjake.com/apps/scripts/tj/tj-speed-review.js',
+    'grammar-hearts': 'https://blog.teacherjake.com/apps/scripts/tj/tj-grammar-hearts.js',
+    'lbl-reader': 'https://blog.teacherjake.com/apps/scripts/tj/tj-reader.js',
+    'listening': 'https://blog.teacherjake.com/apps/scripts/tj/tj-listening.js'
+};
+
+const scriptsToLoad: string[] = [];
+for (const tagSlug of tagSlugs) {
+    if (scriptMap[tagSlug]) {
+        scriptsToLoad.push(scriptMap[tagSlug]);
+    }
+}
+---
+<Layout title={`${post.title} | Teacher Jake Worksheets`} currentLang={currentLang}>
+  <div class="mb-6 pb-6 border-b border-slate-200">
+    <a href={currentLang === 'english' ? '/' : `/${currentLang}`} class="text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-2 mb-4">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      Back to {currentLang} worksheets
+    </a>
+    <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">{post.title}</h1>
+    
+    <div class="flex gap-2 mt-4 flex-wrap">
+      {post.tags?.map(tag => (
+        <span class="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">{tag.name}</span>
+      ))}
+    </div>
+  </div>
+
+  <article class={`prose lg:prose-xl max-w-[720px] mx-auto ${tagClassList}`}>
+    {post.feature_image && (
+        <img src={post.feature_image} alt={post.title} class="w-full max-h-[400px] object-cover rounded-2xl shadow-md mx-auto my-8" />
+    )}
+    
+    <div class="worksheet-content" set:html={post.html} />
+  </article>
+</Layout>
+
+{scriptsToLoad.map(scriptUrl => (
+  // We specify is:inline so Astro puts it exactly here without bundling,
+  // matching how Ghost expects it.
+  <script is:inline type={scriptUrl.includes('quiz') ? "module" : "text/javascript"} src={scriptUrl} defer crossorigin={scriptUrl.includes('quiz') ? "anonymous" : undefined}></script>
+))}
+
+<style is:global>
+  @reference "../../styles/global.css";
+  
+  /* Add prose styling to make Ghost html output look good */
+  .worksheet-content h2 {
+    @apply text-3xl font-bold mt-10 mb-4 text-slate-800;
+  }
+  .worksheet-content p {
+    @apply mb-4 text-slate-700 leading-relaxed;
+  }
+  .worksheet-content ul {
+    @apply list-disc list-inside mb-4 text-slate-700 space-y-2;
+  }
+  .worksheet-content tj-quiz-element {
+    @apply my-8 block;
+  }
+</style>

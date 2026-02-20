@@ -1,0 +1,41 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { pb } from '../../lib/pocketbase';
+
+export async function getStaticPaths() {
+  try {
+    const worksheets = await pb.collection('worksheets').getFullList();
+    return worksheets.map(worksheet => ({
+      params: { id: worksheet.id },
+      props: { worksheet },
+    }));
+  } catch (error) {
+    console.warn("Failed to fetch from Pocketbase. Make sure your Pocketbase server is running.");
+    return [];
+  }
+}
+
+const { worksheet } = Astro.props as { worksheet: any };
+---
+<Layout title={`${worksheet?.title || 'App'} | Teacher Jake App`} currentLang="english">
+  <div class="mb-6 pb-6 border-b border-slate-200">
+    <a href="/" class="text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-2 mb-4">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      Back to Home
+    </a>
+    <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">{worksheet?.title || 'Interactive Lesson'}</h1>
+  </div>
+
+  <article class="max-w-[720px] mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+    <div class="mb-8">
+      <h2 class="text-2xl font-bold mb-4">Interactive Lesson Data</h2>
+      <p class="text-slate-600 mb-4">This data was statically pulled from PocketBase at build time. It is completely decoupled from the database now.</p>
+    </div>
+
+    <!-- Here is where you would normally mount your React components (using an Astro React integration) -->
+    <!-- Or drop your Web Components passing the lesson data as props -->
+    <div class="bg-emerald-50 text-emerald-900 p-6 rounded-xl overflow-x-auto text-sm border border-emerald-100">
+      <pre><code>{JSON.stringify(worksheet, null, 2)}</code></pre>
+    </div>
+  </article>
+</Layout>

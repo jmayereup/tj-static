@@ -1,0 +1,22 @@
+---
+import Navigation from '../components/Navigation.astro';
+import '../styles/global.css';
+
+const { title, currentLang } = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+	</head>
+	<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
+    <Navigation currentLang={currentLang} />
+    <main class="container mx-auto px-4 py-8 md:py-12 max-w-6xl">
+		  <slot />
+    </main>
+	</body>
+</html>
