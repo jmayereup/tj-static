@@ -15,6 +15,12 @@ const { title, currentLang, currentTag } = Astro.props;
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
+
+    <!-- Google Fonts: Lora -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+
 		<ClientRouter />
     
     <!-- Simple Analytics -->
@@ -25,7 +31,7 @@ const { title, currentLang, currentTag } = Astro.props;
     <Navigation currentLang={currentLang} transition:persist />
     
     {currentLang && (
-      <div class="bg-white border-b border-slate-100 shadow-sm" transition:persist>
+      <div class="bg-white border-b border-slate-100 shadow-sm" transition:name="filter-bar">
         <div class="container mx-auto max-w-6xl px-4 flex flex-col md:flex-row items-center justify-between gap-4 py-1">
           <div class="flex-grow">
             <WorksheetFilter currentLang={currentLang} currentTag={currentTag} />
@@ -38,10 +44,41 @@ const { title, currentLang, currentTag } = Astro.props;
     )}
 
     <main class="container mx-auto px-4 py-6 md:py-10 max-w-6xl">
-
-
 		  <slot />
     </main>
+
+    <!-- Global Loading Bar -->
+    <div id="loading-bar" class="fixed top-0 left-0 h-1 bg-[#005522] z-[100] transition-all duration-300 ease-out opacity-0 w-0"></div>
+
+    <script is:inline>
+      let loadingTimeout;
+      document.addEventListener('astro:before-preparation', () => {
+        const bar = document.getElementById('loading-bar');
+        if (bar) {
+          bar.style.width = '30%';
+          bar.style.opacity = '1';
+          
+          // Move slowly after initial jump
+          loadingTimeout = setTimeout(() => {
+            bar.style.width = '70%';
+          }, 300);
+        }
+      });
+
+      document.addEventListener('astro:after-navigation', () => {
+        const bar = document.getElementById('loading-bar');
+        if (bar) {
+          clearTimeout(loadingTimeout);
+          bar.style.width = '100%';
+          setTimeout(() => {
+            bar.style.opacity = '0';
+            setTimeout(() => {
+              bar.style.width = '0';
+            }, 300);
+          }, 200);
+        }
+      });
+    </script>
 	</body>
 </html>
 

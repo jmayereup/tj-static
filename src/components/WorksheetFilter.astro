@@ -16,10 +16,11 @@ const { currentLang, currentTag = 'all' } = Astro.props;
     return (
       <a 
         href={href}
-        class={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+        data-astro-prefetch="hover"
+        class={`filter-link whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
           isActive 
-            ? 'bg-[#00a67d] text-white shadow-sm border border-[#00a67d]' 
-            : 'bg-white text-[#4a5568] border border-[#e2e8f0] hover:border-[#00a67d] hover:text-[#00a67d]'
+            ? 'active-filter bg-[#005522] text-white shadow-sm border border-[#005522]' 
+            : 'bg-white text-[#4a5568] border border-[#e2e8f0] hover:border-[#005522] hover:text-[#005522]'
         }`}
       >
         {filter.label}
@@ -27,4 +28,29 @@ const { currentLang, currentTag = 'all' } = Astro.props;
     );
   })}
 </div>
+
+<script is:inline>
+  // Instant feedback for filter clicks
+  function initFilterFeedback() {
+    const links = document.querySelectorAll('.filter-link');
+    links.forEach(link => {
+      link.addEventListener('click', () => {
+        // Only run if it's not already active
+          if (!link.classList.contains('active-filter')) {
+            links.forEach(l => {
+              l.classList.remove('active-filter', 'bg-[#005522]', 'text-white', 'shadow-sm', 'border-[#005522]');
+              l.classList.add('bg-white', 'text-[#4a5568]', 'border-[#e2e8f0]');
+              l.style.opacity = '1';
+            });
+            link.classList.add('active-filter', 'bg-[#005522]', 'text-white', 'shadow-sm', 'border-[#005522]');
+            link.classList.remove('bg-white', 'text-[#4a5568]', 'border-[#e2e8f0]');
+            link.style.opacity = '0.7'; // Slight transparency to show it's "loading"
+          }
+      });
+    });
+  }
+
+  // Handle both initial load and view transitions
+  document.addEventListener('astro:page-load', initFilterFeedback);
+</script>
 

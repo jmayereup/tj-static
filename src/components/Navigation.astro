@@ -8,20 +8,26 @@ const languages = [
 
 const { currentLang = 'english' } = Astro.props;
 ---
-<nav class="bg-emerald-600 text-white py-2 px-4 shadow-sm">
+<nav class="bg-[#005522] text-white py-2 px-4 shadow-sm">
   <div class="container mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4">
     <a href="/" class="text-xl font-bold flex items-center gap-2">
-      <img src="/tj-logo.png" alt="TJ Logo" class="h-8 w-auto rounded shadow-inner" />
-      Teacher Jake
+      <img 
+        src="/tj-logo-book.png" 
+        alt="TJ Logo" 
+        class="h-10 w-auto rounded shadow-inner" 
+        transition:name="navbar-logo" 
+      />
+      <span class="text-white font-serif tracking-wide">Teacher Jake</span>
     </a>
     <div class="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar justify-center md:justify-end">
       {languages.map(lang => (
         <a 
           href={lang.code === 'english' ? '/' : `/${lang.code}`}
-          class={`whitespace-nowrap px-4 py-2 rounded-lg font-medium transition-colors ${
+          data-astro-prefetch="hover"
+          class={`nav-link whitespace-nowrap px-4 py-2 rounded-lg font-medium transition-colors ${
             currentLang === lang.code 
-              ? 'bg-white text-emerald-600 shadow-sm' 
-              : 'hover:bg-emerald-500 text-emerald-50'
+              ? 'active-nav bg-white text-[#005522] shadow-sm' 
+              : 'hover:bg-[#00a67d] text-emerald-50'
           }`}
         >
           {lang.label}
@@ -30,6 +36,30 @@ const { currentLang = 'english' } = Astro.props;
     </div>
   </div>
 </nav>
+
+<script is:inline>
+  // Instant feedback for nav clicks
+  function initNavFeedback() {
+    const links = document.querySelectorAll('.nav-link');
+    links.forEach(link => {
+      link.addEventListener('click', () => {
+        if (!link.classList.contains('active-nav')) {
+          links.forEach(l => {
+            l.classList.remove('active-nav', 'bg-white', 'text-[#005522]', 'shadow-sm');
+            l.classList.add('hover:bg-[#00a67d]', 'text-emerald-50');
+            l.style.opacity = '1';
+          });
+          link.classList.add('active-nav', 'bg-white', 'text-[#005522]', 'shadow-sm');
+          link.classList.remove('hover:bg-[#00a67d]', 'text-emerald-50');
+          link.style.opacity = '0.7';
+        }
+      });
+    });
+  }
+
+  document.addEventListener('astro:page-load', initNavFeedback);
+</script>
+
 
 <style>
   .hide-scrollbar::-webkit-scrollbar { display: none; }
