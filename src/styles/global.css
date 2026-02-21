@@ -3,3 +3,9 @@
 @theme {
   --font-sans: "Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif";
 }
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+}

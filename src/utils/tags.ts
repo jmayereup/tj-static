@@ -6,6 +6,7 @@ export const CATEGORY_FILTERS = [
   { label: 'Games', id: 'grammar-game' },
   { label: 'Speaking', id: 'speaking' },
   { label: 'Listening', id: 'listening' },
+  { label: 'Pronunciation', id: 'pronunciation' },
 ];
 
 export const LANGUAGES = [

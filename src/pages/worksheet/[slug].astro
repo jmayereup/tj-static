@@ -1,10 +1,11 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { ghostClient } from '../../lib/ghost';
+import { getAllPosts } from '../../lib/ghost-utils';
 import { downloadGhostAsset, downloadGhostHtmlAssets } from '../../utils/downloadGhostAsset';
 
 export async function getStaticPaths() {
-  const posts = await ghostClient.posts.browse({ limit: "all", include: ['tags'] });
+  const posts = await getAllPosts({ include: ['tags'] });
   return posts.map(post => ({
     params: { slug: post.slug },
     props: { post },
@@ -44,7 +45,8 @@ const scriptMap: Record<string, string> = {
     'speed-review': 'https://jmayereup.github.io/tj-components/dist/tj-speed-review.js',
     'grammar-hearts': 'https://jmayereup.github.io/tj-components/dist/tj-grammar-hearts.js',
     'lbl-reader': 'https://jmayereup.github.io/tj-components/dist/tj-reader.js',
-    'listening': 'https://jmayereup.github.io/tj-components/dist/tj-listening.js'
+    'listening': 'https://jmayereup.github.io/tj-components/dist/tj-listening.js',
+    'pronunciation': 'https://jmayereup.github.io/tj-components/dist/tj-pronunciation.js'
 };
 
 const scriptsToLoad: string[] = [];
@@ -69,9 +71,11 @@ for (const tagSlug of tagSlugs) {
     </div>
   </div>
 
-  <article class={`prose lg:prose-xl max-w-[720px] mx-auto ${tagClassList}`}>
+  <article class={`prose lg:prose-xl max-w-[720px] mx-auto ${tagClassList}`} data-pagefind-body>
     {post.feature_image && (
-        <img src={post.feature_image} alt={post.title} class="w-full max-h-[400px] object-cover rounded-2xl shadow-md mx-auto my-8" />
+        <div class="w-full max-h-[400px] bg-slate-50 rounded-2xl shadow-md mx-auto my-8 overflow-hidden flex justify-center">
+          <img src={post.feature_image} alt={post.title} class="max-h-[400px] object-contain" />
+        </div>
     )}
     
     <div class="worksheet-content" set:html={post.html} />

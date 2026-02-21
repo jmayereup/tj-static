@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { ghostClient } from '../../lib/ghost';
+import { getAllPosts } from '../../lib/ghost-utils';
 import { LANGUAGES } from '../../utils/tags';
 import WorksheetFilter from '../../components/WorksheetFilter.astro';
 import Pagination from '../../components/Pagination.astro';
@@ -13,8 +14,7 @@ export async function getStaticPaths({ paginate }: any) {
     const lang = langObj.code;
     let posts: any[] = [];
     try {
-      posts = await ghostClient.posts.browse({
-          limit: "all",
+      posts = await getAllPosts({
           filter: `tag:${lang}`,
           include: ['tags']
       });

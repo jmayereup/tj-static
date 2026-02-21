@@ -60,13 +60,11 @@ const titleMap: Record<string, string> = {
 
 const displayLang = titleMap[lang as string] || lang;
 ---
-<Layout title={`Teacher Jake Interactive Worksheets - ${displayLang}`} currentLang={lang}>
-  <div class="mb-12 text-center pt-8">
+<Layout title={`Teacher Jake Interactive Worksheets - ${displayLang}`} currentLang={lang} currentTag="worksheets">
+  <div class="mb-8 text-center pt-4">
     <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-[#06422f] tracking-tight">{displayLang} Worksheets</h1>
     <p class="text-lg text-[#4a5568] max-w-2xl mx-auto">Browse our collection of interactive {displayLang} apps and digital worksheets.</p>
   </div>
-  
-  <WorksheetFilter currentLang={lang} currentTag="worksheets" />
 
   {worksheets.length === 0 ? (
     <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
@@ -90,7 +88,7 @@ const displayLang = titleMap[lang as string] || lang;
         </div>
       </div>
       
-      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" id="pb-worksheet-grid">
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" id="pb-worksheet-grid" data-pagefind-body>
         {worksheets.map((ws: any) => {
           const mainTag = ws.tags?.[0]?.toLowerCase() || 'general';
           return (
