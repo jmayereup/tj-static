@@ -49,28 +49,45 @@ export async function downloadGhostAsset(url: string, id: string): Promise<strin
   }
 }
 
-// Replaces all <img src="..."> tags inside an HTML string with local downloaded versions
-export async function downloadGhostHtmlAssets(html: string, postId: string): Promise<string> {
+// Replaces all <img src="..."> and <source src="..."> tags inside an HTML string with local downloaded versions
+export async function downloadGhostHtmlAssets(html: string, postId: string, ghostUrl: string = ''): Promise<string> {
   if (!html) return '';
   
-  const imgRegex = /<img[^>]+src="([^">]+)"/g;
+  // Look for src attributes in img, audio, video, source, and data-thumbnail
+  const assetRegex = /(?:src|data-thumbnail)="([^">]+)"/g;
   let match;
   let newHtml = html;
   
   // We need to keep track of matched URLs so we can replace them sequentially
   const urlsToDownload = new Set<string>();
   
-  while ((match = imgRegex.exec(html)) !== null) {
-      if (match[1] && match[1].startsWith('http')) {
-          urlsToDownload.add(match[1]);
+  while ((match = assetRegex.exec(html)) !== null) {
+      let url = match[1];
+      if (url) {
+          // If relative, prepend ghost URL
+          if (url.startsWith('/')) {
+              url = `${ghostUrl}${url}`;
+          }
+          
+          if (url.startsWith('http')) {
+              urlsToDownload.add(url);
+          }
       }
   }
   
-  for (const url of urlsToDownload) {
-      const localUrl = await downloadGhostAsset(url, postId);
-      if (localUrl !== url) {
-          // Replace all occurrences of this specific URL in the HTML
-          newHtml = newHtml.split(url).join(localUrl);
+  for (const originalUrl of urlsToDownload) {
+      const localUrl = await downloadGhostAsset(originalUrl, postId);
+      if (localUrl !== originalUrl) {
+          // We need to handle the replacement carefully. 
+          // If the original URL was relative, we need to find it by its relative path in the HTML
+          // but the local library stores it by absolute.
+          
+          // Case 1: The HTML has the absolute URL
+          newHtml = newHtml.split(originalUrl).join(localUrl);
+          
+          // Case 2: The HTML has the relative URL
+          const relativePath = new URL(originalUrl).pathname;
+          newHtml = newHtml.split(relativePath).join(localUrl);
       }
   }
   

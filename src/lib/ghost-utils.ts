@@ -5,9 +5,13 @@ export async function getAllPosts(options: any = {}) {
   let page = 1;
   let totalPages = 1;
 
+  const dateFilter = "published_at:>'2025-12-01T00:00:00Z'";
+  const filter = options.filter ? `(${options.filter})+${dateFilter}` : dateFilter;
+
   do {
     const response = await ghostClient.posts.browse({
       ...options,
+      filter: filter,
       limit: 15, // Using a standard size, though Ghost might handle up to 100
       page: page,
     });

@@ -20,12 +20,12 @@ if (post.feature_image) {
 }
 
 if (post.html) {
-    post.html = await downloadGhostHtmlAssets(post.html, post.slug);
+    post.html = await downloadGhostHtmlAssets(post.html, post.slug, import.meta.env.GHOST_API_URL);
 }
 
 // Find if any tags require a specific web component script
-const tagSlugs = post.tags?.map(t => t.slug) || [];
-const tagClassList = tagSlugs.map(slug => `tag-${slug}`).join(' ');
+const tagSlugs = post.tags?.map((t: any) => t.slug) || [];
+const tagClassList = tagSlugs.map((slug: string) => `tag-${slug}`).join(' ');
 
 // Find language for highlighting navigation
 let currentLang = 'english';
@@ -65,7 +65,7 @@ for (const tagSlug of tagSlugs) {
     <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">{post.title}</h1>
     
     <div class="flex gap-2 mt-4 flex-wrap">
-      {post.tags?.map(tag => (
+      {post.tags?.map((tag: any) => (
         <span class="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">{tag.name}</span>
       ))}
     </div>
@@ -104,4 +104,27 @@ for (const tagSlug of tagSlugs) {
   .worksheet-content tj-quiz-element {
     @apply my-8 block;
   }
+
+  /* Ghost Audio Card Styles */
+  .worksheet-content .kg-audio-card {
+    @apply flex items-center bg-white border border-slate-200 rounded-2xl p-4 my-8 shadow-sm gap-4 max-w-full overflow-hidden;
+  }
+  .worksheet-content .kg-audio-thumbnail {
+    @apply w-20 h-20 rounded-xl object-cover shadow-sm bg-slate-50 flex-shrink-0;
+  }
+  .worksheet-content .kg-audio-player-container {
+    @apply flex-grow flex flex-col gap-2 min-w-0;
+  }
+  .worksheet-content .kg-audio-title {
+    @apply font-bold text-slate-900 text-lg leading-tight truncate;
+  }
+  .worksheet-content audio {
+    @apply w-full h-10 mt-1;
+  }
+  /* Hide custom Ghost player text/elements that won't work without their JS */
+  .worksheet-content .kg-audio-player-container > :not(audio, .kg-audio-title) {
+    @apply hidden;
+  }
 </style>
+
+
