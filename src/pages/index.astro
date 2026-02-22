@@ -67,7 +67,17 @@ try {
               )}
               <div class="flex items-center gap-2">
                 {levelTag && <div class="h-1 w-1 rounded-full bg-slate-200"></div>}
-                <span class="text-[10px] text-slate-400 font-medium tracking-wider">#{post.slug.substring(0, 4)}</span>
+                {(() => {
+                  const displayTag = post.tags?.find((t: any) => 
+                    !['A1', 'A2', 'B1', 'B2', lang].includes(t.name) && 
+                    !t.name.startsWith('#')
+                  );
+                  return displayTag ? (
+                    <span class="text-[10px] font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">#{displayTag.name}</span>
+                  ) : (
+                    <span class="text-[10px] text-slate-400 font-medium tracking-wider uppercase">#{post.slug.substring(0, 4)}</span>
+                  );
+                })()}
               </div>
             </div>
 
