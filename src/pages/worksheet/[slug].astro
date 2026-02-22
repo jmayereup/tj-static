@@ -57,6 +57,13 @@ for (const tagSlug of tagSlugs) {
 }
 ---
 <Layout title={`${post.title} | Teacher Jake Worksheets`} currentLang={currentLang}>
+  <Fragment slot="head">
+    {scriptsToLoad.map(scriptUrl => (
+      // We specify is:inline so Astro puts it exactly here without bundling,
+      // matching how Ghost expects it.
+      <script is:inline type={scriptUrl.includes('quiz') ? "module" : "text/javascript"} src={scriptUrl} defer crossorigin={scriptUrl.includes('quiz') ? "anonymous" : undefined}></script>
+    ))}
+  </Fragment>
   <div class="mb-6 pb-6 border-b border-slate-200">
     <a href={currentLang === 'english' ? '/' : `/${currentLang}`} class="text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-2 mb-4">
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
@@ -81,12 +88,6 @@ for (const tagSlug of tagSlugs) {
     <div class="worksheet-content" set:html={post.html} />
   </article>
 </Layout>
-
-{scriptsToLoad.map(scriptUrl => (
-  // We specify is:inline so Astro puts it exactly here without bundling,
-  // matching how Ghost expects it.
-  <script is:inline type={scriptUrl.includes('quiz') ? "module" : "text/javascript"} src={scriptUrl} defer crossorigin={scriptUrl.includes('quiz') ? "anonymous" : undefined}></script>
-))}
 
 <style is:global>
   @reference "../../styles/global.css";

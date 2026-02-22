@@ -22,6 +22,7 @@ const { title, currentLang, currentTag } = Astro.props;
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
 
 		<ClientRouter />
+    <slot name="head" />
     
     <!-- Simple Analytics -->
     <script type="text/partytown" src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
