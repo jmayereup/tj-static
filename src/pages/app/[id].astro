@@ -1,0 +1,67 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { pb } from '../../lib/pocketbase';
+import { downloadAsset } from '../../utils/downloadAsset';
+
+export async function getStaticPaths() {
+  try {
+    const worksheets = await pb.collection('worksheets').getFullList();
+    return worksheets.map(worksheet => ({
+      params: { id: worksheet.id },
+      props: { worksheet },
+    }));
+  } catch (error) {
+    console.warn("Failed to fetch from Pocketbase. Make sure your Pocketbase server is running.");
+    return [];
+  }
+}
+
+const { worksheet } = Astro.props as { worksheet: any };
+
+let content = typeof worksheet.content === 'string' ? JSON.parse(worksheet.content || '{}') : (worksheet.content || {});
+
+let imageUrl = worksheet.image ? pb.files.getURL(worksheet, worksheet.image) : undefined;
+if (imageUrl) {
+  imageUrl = await downloadAsset(imageUrl, worksheet.id, worksheet.image);
+}
+
+let audioFileUrl = worksheet.audioFile ? pb.files.getURL(worksheet, worksheet.audioFile) : undefined;
+if (audioFileUrl) {
+  audioFileUrl = await downloadAsset(audioFileUrl, worksheet.id, worksheet.audioFile);
+}
+
+const parsedLesson = {
+  ...worksheet,
+  content,
+  image: imageUrl,
+  audioFile: audioFileUrl
+};
+const currentLang = (worksheet.language || 'English').toLowerCase();
+---
+<Layout title={`${worksheet?.title || 'App'} | Teacher Jake App`} currentLang={currentLang} currentTag="worksheets">
+  <div class="mb-6 pb-6 border-b border-slate-200">
+    <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">{worksheet?.title || 'Interactive Lesson'}</h1>
+  </div>
+
+  <article class="max-w-[720px] mx-auto bg-white p-8 rounded-2xl shadow-sm border border-slate-100">
+
+
+    <!-- Web Component Wrapper -->
+    <tj-pocketbase-worksheet>
+      <script type="application/json" set:html={JSON.stringify(parsedLesson)} />
+    </tj-pocketbase-worksheet>
+  </article>
+</Layout>
+
+<link rel="stylesheet" href="https://jmayereup.github.io/language-learning-worksheets/dist/wc/language-learning-worksheets.css">
+
+<script is:inline>
+  // Ensure the script is only loaded when component is used
+  if (!customElements.get('tj-pocketbase-worksheet')) {
+     const script = document.createElement('script');
+     script.src = 'https://jmayereup.github.io/language-learning-worksheets/dist/wc/tj-pocketbase-worksheet.es.js'; 
+     script.type = 'module';
+     script.defer = true;
+     document.head.appendChild(script);
+  }
+</script>
