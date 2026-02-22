@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { Image } from 'astro:assets';
 import { getAllPosts } from '../../lib/ghost-utils';
 import { downloadGhostAsset, downloadGhostHtmlAssets } from '../../utils/downloadGhostAsset';
 import { transformComponentsToScripts } from '../../utils/transformComponentsToScripts';
@@ -13,6 +14,7 @@ export async function getStaticPaths() {
 }
 
 const { post: initialPost } = Astro.props;
+const ogImage = initialPost.feature_image; // Original URL for OG
 const post = { ...initialPost };
 
 if (post.feature_image) {
@@ -87,7 +89,7 @@ const finalScripts = Array.from(scriptsToLoad);
   title={`${post.title} | Teacher Jake Worksheets`} 
   currentLang={currentLang}
   description={post.excerpt || post.custom_excerpt}
-  image={post.feature_image}
+  image={ogImage}
   article={true}
 >
   <Fragment slot="head">
@@ -109,7 +111,13 @@ const finalScripts = Array.from(scriptsToLoad);
   <article class={`prose lg:prose-xl max-w-[720px] mx-auto ${tagClassList}`} data-pagefind-body>
     {post.feature_image && (
         <div class="w-full max-h-[400px] bg-slate-50 rounded-2xl shadow-md mx-auto my-8 overflow-hidden flex justify-center">
-          <img src={post.feature_image} alt={post.title} class="max-h-[400px] object-contain" />
+          <Image 
+            src={post.feature_image} 
+            alt={post.title} 
+            width={1200}
+            height={630}
+            class="max-h-[400px] object-contain" 
+          />
         </div>
     )}
     

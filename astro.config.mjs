@@ -10,6 +10,12 @@ export default defineConfig({
       forward: ["sa_event"]
     }
   })],
+  image: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'blog.teacherjake.com' },
+      { protocol: 'https', hostname: 'img.youtube.com' }
+    ]
+  },
   vite: {
     plugins: [tailwindcss()]
   }

@@ -36,6 +36,7 @@ const parsedLesson = {
   image: imageUrl,
   audioFile: audioFileUrl
 };
+const ogImage = worksheet.image ? pb.files.getURL(worksheet, worksheet.image) : undefined;
 const currentLang = (worksheet.language || 'English').toLowerCase();
 ---
 <Layout 
@@ -43,7 +44,7 @@ const currentLang = (worksheet.language || 'English').toLowerCase();
   currentLang={currentLang} 
   currentTag="worksheets"
   description={worksheet?.description}
-  image={imageUrl}
+  image={ogImage}
 >
   <div class="mb-6 pb-6 border-b border-slate-200">
     <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">{worksheet?.title || 'Interactive Lesson'}</h1>
