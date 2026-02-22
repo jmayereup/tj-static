@@ -9,7 +9,14 @@ function getFilenameFromUrl(url: string, id: string): string {
     const parts = pathname.split('/');
     let filename = parts[parts.length - 1];
     if (!filename || !filename.includes('.')) {
-      filename = `${id}.jpg`;
+      // Try to determine a default based on the URL path instead of just .jpg
+      if (pathname.includes('/media/') || pathname.includes('audio')) {
+        filename = `${id}.mp3`;
+      } else if (pathname.includes('/files/')) {
+        filename = `${id}.pdf`;
+      } else {
+        filename = `${id}.jpg`;
+      }
     }
     return filename;
   } catch {
@@ -39,6 +46,9 @@ export async function downloadGhostAsset(url: string, id: string): Promise<strin
     const response = await fetch(url);
     if (!response.ok) throw new Error(`unexpected response ${response.statusText}`);
     
+    // We could additionally check the Content-Type header here to rename the file
+    // if the assumed extension above was incorrect, but Ghost URLs usually have the correct extension.
+    
     const buffer = await response.arrayBuffer();
     fs.writeFileSync(destPattern, Buffer.from(buffer));
     console.log(`Downloaded Ghost asset: ${publicUrl}`);
@@ -49,12 +59,13 @@ export async function downloadGhostAsset(url: string, id: string): Promise<strin
   }
 }
 
-// Replaces all <img src="..."> and <source src="..."> tags inside an HTML string with local downloaded versions
+// Replaces all <img src="...">, <audio src="...">, <source src="..."> tags inside an HTML string with local downloaded versions
 export async function downloadGhostHtmlAssets(html: string, postId: string, ghostUrl: string = ''): Promise<string> {
   if (!html) return '';
   
   // Look for src attributes in img, audio, video, source, and data-thumbnail
-  const assetRegex = /(?:src|data-thumbnail)="([^">]+)"/g;
+  // Also look for href for ghost file cards.
+  const assetRegex = /(src|data-thumbnail|href)="([^">]+)"/g;
   let match;
   let newHtml = html;
   
@@ -62,8 +73,19 @@ export async function downloadGhostHtmlAssets(html: string, postId: string, ghos
   const urlsToDownload = new Set<string>();
   
   while ((match = assetRegex.exec(html)) !== null) {
-      let url = match[1];
+      const attr = match[1];
+      let url = match[2];
+      
       if (url) {
+          // Exclude hrefs that are not ghost assets
+          if (attr === 'href') {
+              if (!url.includes('/content/media/') &&
+                  !url.includes('/content/images/') &&
+                  !url.includes('/content/files/')) {
+                  continue;
+              }
+          }
+
           // If relative, prepend ghost URL
           if (url.startsWith('/')) {
               url = `${ghostUrl}${url}`;
@@ -82,12 +104,18 @@ export async function downloadGhostHtmlAssets(html: string, postId: string, ghos
           // If the original URL was relative, we need to find it by its relative path in the HTML
           // but the local library stores it by absolute.
           
-          // Case 1: The HTML has the absolute URL
-          newHtml = newHtml.split(originalUrl).join(localUrl);
+          // Using a simple split/join on the original URL string found in the HTML is safer 
+          // to preserve query strings that `new URL(originalUrl).pathname` might strip.
           
-          // Case 2: The HTML has the relative URL
-          const relativePath = new URL(originalUrl).pathname;
-          newHtml = newHtml.split(relativePath).join(localUrl);
+          // Reconstruct the exact string that was in the HTML
+          let relativeOriginal = originalUrl;
+          if (ghostUrl && originalUrl.startsWith(ghostUrl)) {
+              relativeOriginal = originalUrl.substring(ghostUrl.length);
+          }
+          
+          // Replace both absolute and relative variants directly without stripping query params
+          newHtml = newHtml.split(originalUrl).join(localUrl);
+          newHtml = newHtml.split(relativeOriginal).join(localUrl);
       }
   }
   
