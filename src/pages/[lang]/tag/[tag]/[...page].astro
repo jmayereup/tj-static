@@ -1,5 +1,6 @@
 ---
 import Layout from '../../../../layouts/Layout.astro';
+import { Image } from 'astro:assets';
 import { ghostClient } from '../../../../lib/ghost';
 import { getAllPosts } from '../../../../lib/ghost-utils';
 import { LANGUAGES, CATEGORY_FILTERS } from '../../../../utils/tags';
@@ -80,11 +81,13 @@ const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as s
         const levelTag = post.tags?.find((tagObj: any) => ['A1', 'A2', 'B1', 'B2'].includes(tagObj.name));
         return (
         <a href={`/gh/${post.slug}`} class="group bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
-          <div class="aspect-[16/9] w-full flex-shrink-0 bg-slate-50 loading-pulse flex items-center justify-center overflow-hidden relative border-b border-slate-100">
+          <div class="aspect-video w-full shrink-0 bg-slate-50 loading-pulse flex items-center justify-center overflow-hidden relative border-b border-slate-100">
             {post.feature_image ? (
-               <img 
+               <Image 
                  src={post.feature_image} 
                  alt={post.title} 
+                 width={400}
+                 height={225}
                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                  loading="lazy"
                  decoding="async"
@@ -96,7 +99,7 @@ const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as s
             )}
           </div>
           
-          <div class="flex-grow p-6 flex flex-col">
+          <div class="grow p-6 flex flex-col">
             <div class="flex items-center gap-2 mb-3">
               {levelTag && (
                 <span class="text-[10px] font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
@@ -119,11 +122,11 @@ const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as s
               </div>
             </div>
 
-            <h2 class="font-extrabold text-blue-600 text-[1.15rem] leading-tight mb-2 group-hover:text-blue-800 transition-colors line-clamp-2 min-h-[3rem]">
+            <h2 class="font-extrabold text-blue-600 text-[1.15rem] leading-tight mb-2 group-hover:text-blue-800 transition-colors line-clamp-2 min-h-12">
               {post.title}
             </h2>
             
-            <p class="text-slate-500 text-sm leading-relaxed line-clamp-2 mb-0 flex-grow">
+            <p class="text-slate-500 text-sm leading-relaxed line-clamp-2 mb-0 grow">
               {post.custom_excerpt || post.excerpt}
             </p>
             

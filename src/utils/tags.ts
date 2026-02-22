@@ -1,7 +1,7 @@
 export const CATEGORY_FILTERS = [
   { label: 'All', id: 'all' },
-  { label: 'Stories', id: 'lbl-en-th' },
-  { label: 'Books', id: 'english-book' },
+  { label: 'Stories', id: 'lbl-reader' },
+  { label: 'Books', id: 'book' },
   { label: 'Worksheets', id: 'worksheets' },
   { label: 'Games', id: 'grammar-game' },
   { label: 'Speaking', id: 'speaking' },
