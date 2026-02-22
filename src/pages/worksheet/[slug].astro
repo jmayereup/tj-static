@@ -66,10 +66,6 @@ for (const tagSlug of tagSlugs) {
     ))}
   </Fragment>
   <div class="mb-6 pb-6 border-b border-slate-200">
-    <a href={currentLang === 'english' ? '/' : `/${currentLang}`} class="text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-2 mb-4">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-      Back to {currentLang} 
-    </a>
     <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">{post.title}</h1>
     
     <div class="flex gap-2 mt-4 flex-wrap">
@@ -94,13 +90,13 @@ for (const tagSlug of tagSlugs) {
   @reference "../../styles/global.css";
   
   /* Add prose styling to make Ghost html output look good */
-  .worksheet-content h2 {
+  .worksheet-content :where(h2) {
     @apply text-3xl font-bold mt-10 mb-4 text-slate-800;
   }
-  .worksheet-content p {
+  .worksheet-content :where(p) {
     @apply mb-4 text-slate-700 leading-relaxed;
   }
-  .worksheet-content ul {
+  .worksheet-content :where(ul) {
     @apply list-disc list-inside mb-4 text-slate-700 space-y-2;
   }
   .worksheet-content :is(tj-info-gap, tj-chapter-book, tj-quiz-element, tj-speed-review, tj-grammar-hearts, tj-reader, tj-listening, tj-pronunciation) {
