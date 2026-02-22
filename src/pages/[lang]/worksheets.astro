@@ -60,7 +60,12 @@ const titleMap: Record<string, string> = {
 
 const displayLang = titleMap[lang as string] || lang;
 ---
-<Layout title={`Teacher Jake Interactive Worksheets - ${displayLang}`} currentLang={lang} currentTag="worksheets">
+<Layout 
+  title={`Teacher Jake Interactive Worksheets - ${displayLang}`} 
+  currentLang={lang} 
+  currentTag="worksheets"
+  description={`Browse our collection of interactive ${displayLang} apps and digital worksheets.`}
+>
   <div class="mb-8 text-center pt-4">
     <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-[#06422f] tracking-tight">{displayLang} Worksheets</h1>
     <p class="text-lg text-[#4a5568] max-w-2xl mx-auto">Browse our collection of interactive {displayLang} apps and digital worksheets.</p>
