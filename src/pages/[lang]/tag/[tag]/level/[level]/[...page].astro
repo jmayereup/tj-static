@@ -1,16 +1,15 @@
 ---
-import Layout from '../../../../layouts/Layout.astro';
+import Layout from '../../../../../../layouts/Layout.astro';
 import { Image } from 'astro:assets';
-import { ghostClient } from '../../../../lib/ghost';
-import { getAllPosts } from '../../../../lib/ghost-utils';
-import { LANGUAGES, CATEGORY_FILTERS } from '../../../../utils/tags';
-import WorksheetFilter from '../../../../components/WorksheetFilter.astro';
-import LevelFilter from '../../../../components/LevelFilter.astro';
-import Pagination from '../../../../components/Pagination.astro';
-import { downloadGhostAsset } from '../../../../utils/downloadGhostAsset';
+import { getAllPosts } from '../../../../../../lib/ghost-utils';
+import { LANGUAGES, CATEGORY_FILTERS, getLevelFromTags } from '../../../../../../utils/tags';
+import LevelFilter from '../../../../../../components/LevelFilter.astro';
+import Pagination from '../../../../../../components/Pagination.astro';
+import { downloadGhostAsset } from '../../../../../../utils/downloadGhostAsset';
 
 export async function getStaticPaths({ paginate }: any) {
   const allPaths: any[] = [];
+  const levels = ['a1', 'a2', 'b1', 'b2'];
 
   for (const langObj of LANGUAGES) {
     const lang = langObj.code;
@@ -32,19 +31,29 @@ export async function getStaticPaths({ paginate }: any) {
     }
     
     // For each category, filter posts locally
-    const filterCategories = CATEGORY_FILTERS.filter(f => f.id !== 'all');
+    const filterCategories = CATEGORY_FILTERS.filter((f: any) => f.id !== 'all');
     for (const category of filterCategories) {
         // Find posts that have the exact tag slug
-        const filteredPosts = posts.filter(post => 
+        const categoryPosts = posts.filter((post: any) => 
             post.tags?.some((t: any) => t.slug === category.id)
         );
 
-        const paginated = paginate(filteredPosts, {
-          params: { lang, tag: category.id },
-          pageSize: 12
-        });
-        
-        allPaths.push(...paginated);
+        for (const level of levels) {
+            const levelPosts = categoryPosts.filter((post: any) => getLevelFromTags(post.tags) === level);
+            const paginated = paginate(levelPosts, {
+              params: { lang, tag: category.id, level },
+              pageSize: 12
+            });
+            
+            if (paginated.length === 0) {
+              allPaths.push({
+                params: { lang, tag: category.id, level, page: undefined },
+                props: { page: { data: [], start: 0, end: 0, total: 0, currentPage: 1, lastPage: 1, url: { current: `/${lang}/tag/${category.id}/level/${level}` } } }
+              });
+            } else {
+              allPaths.push(...paginated);
+            }
+        }
     }
   }
 
@@ -52,8 +61,8 @@ export async function getStaticPaths({ paginate }: any) {
 }
 
 const { page } = Astro.props as { page: any };
-const { lang, tag } = Astro.params;
-const posts = page.data;
+const { lang, tag, level } = Astro.params;
+const posts = page.data || [];
 
 const titleMap: Record<string, string> = {
   french: 'French',
@@ -63,20 +72,20 @@ const titleMap: Record<string, string> = {
 };
 
 const displayLang = titleMap[lang as string] || lang;
-const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as string);
+const filterLabel = CATEGORY_FILTERS.find((f: any) => f.id === tag)?.label || (tag as string);
 ---
-<Layout title={`Teacher Jake ${filterLabel} - ${displayLang} (Page ${page.currentPage})`} currentLang={lang} currentTag={tag}>
+<Layout title={`Teacher Jake ${filterLabel} ${level ? level.toString().toUpperCase() : ''} - ${displayLang} (Page ${page.currentPage})`} currentLang={lang} currentTag={tag}>
   <div class="mb-4 text-center pt-2">
     <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-emerald-950 tracking-tight capitalize">{displayLang} {filterLabel}</h1>
     <p class="text-lg text-slate-600 max-w-2xl mx-auto">Browse our collection of interactive {displayLang} {(filterLabel as string).toLowerCase()} and language learning activities.</p>
   </div>
   
-  <LevelFilter currentLang={lang as string} currentTag={tag as string} currentLevel="all" />
+  <LevelFilter currentLang={lang as string} currentTag={tag as string} currentLevel={level as string} />
 
   {posts.length === 0 ? (
     <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
-      <p class="text-lg font-medium">No {displayLang} {(filterLabel as string).toLowerCase()} found.</p>
-      <p class="mt-2 opacity-80">Make sure your Ghost posts have the exact tag "{tag}".</p>
+      <p class="text-lg font-medium">No {displayLang} {level?.toString().toUpperCase()} {(filterLabel as string).toLowerCase()} found.</p>
+      <p class="mt-2 opacity-80">Check back later for more content.</p>
     </div>
   ) : (
     <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-pagefind-body transition:name="content-grid">

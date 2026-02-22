@@ -1,0 +1,52 @@
+---
+export interface Props {
+  currentLang: string;
+  currentTag?: string;
+  currentLevel?: string;
+}
+
+const { currentLang, currentTag = 'all', currentLevel = 'all' } = Astro.props;
+
+const LEVELS = [
+  { label: 'All Levels', id: 'all' },
+  { label: 'A1', id: 'a1' },
+  { label: 'A2', id: 'a2' },
+  { label: 'B1', id: 'b1' },
+  { label: 'B2', id: 'b2' },
+];
+---
+<div class="flex flex-wrap items-center justify-center gap-2 md:gap-3 py-2 mt-2 md:mt-0 mb-4 max-w-2xl mx-auto">
+  <span class="text-sm font-semibold text-slate-400 mr-1 uppercase tracking-wider">Level</span>
+  {LEVELS.map(level => {
+    const isActive = currentLevel === level.id;
+    let href = '';
+    
+    if (currentTag === 'all') {
+      if (level.id === 'all') {
+        href = `/${currentLang}`;
+      } else {
+        href = `/${currentLang}/level/${level.id}`;
+      }
+    } else {
+      if (level.id === 'all') {
+        href = `/${currentLang}/tag/${currentTag}`;
+      } else {
+        href = `/${currentLang}/tag/${currentTag}/level/${level.id}`;
+      }
+    }
+
+    return (
+      <a 
+        href={href}
+        data-astro-prefetch="hover"
+        class={`level-link whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold transition-all uppercase tracking-wide ${
+          isActive 
+            ? 'bg-blue-600 text-white shadow-sm border border-blue-600' 
+            : 'bg-white text-slate-500 border border-slate-200 hover:border-blue-300 hover:text-blue-600'
+        }`}
+      >
+        {level.label}
+      </a>
+    );
+  })}
+</div>

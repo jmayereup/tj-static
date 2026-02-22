@@ -15,3 +15,15 @@ export const LANGUAGES = [
   { code: 'german', label: 'German' },
   { code: 'spanish', label: 'Spanish' }
 ];
+
+export const getLevelFromTags = (tags: any[]) => {
+  if (!tags) return null;
+  const match = tags.find((t: any) => /A1|A2|B1|B2/.test(t.name.toUpperCase()));
+  if (!match) return null;
+  const name = match.name.toUpperCase();
+  if (name.includes('A1')) return 'a1';
+  if (name.includes('A2')) return 'a2';
+  if (name.includes('B1')) return 'b1';
+  if (name.includes('B2')) return 'b2';
+  return null;
+};

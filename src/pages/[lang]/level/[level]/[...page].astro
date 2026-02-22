@@ -3,7 +3,7 @@ import Layout from '../../../../layouts/Layout.astro';
 import { Image } from 'astro:assets';
 import { ghostClient } from '../../../../lib/ghost';
 import { getAllPosts } from '../../../../lib/ghost-utils';
-import { LANGUAGES, CATEGORY_FILTERS } from '../../../../utils/tags';
+import { LANGUAGES, getLevelFromTags } from '../../../../utils/tags';
 import WorksheetFilter from '../../../../components/WorksheetFilter.astro';
 import LevelFilter from '../../../../components/LevelFilter.astro';
 import Pagination from '../../../../components/Pagination.astro';
@@ -11,6 +11,7 @@ import { downloadGhostAsset } from '../../../../utils/downloadGhostAsset';
 
 export async function getStaticPaths({ paginate }: any) {
   const allPaths: any[] = [];
+  const levels = ['a1', 'a2', 'b1', 'b2'];
 
   for (const langObj of LANGUAGES) {
     const lang = langObj.code;
@@ -31,20 +32,21 @@ export async function getStaticPaths({ paginate }: any) {
       console.error(`Failed to fetch Ghost posts for ${lang}`, e);
     }
     
-    // For each category, filter posts locally
-    const filterCategories = CATEGORY_FILTERS.filter(f => f.id !== 'all');
-    for (const category of filterCategories) {
-        // Find posts that have the exact tag slug
-        const filteredPosts = posts.filter(post => 
-            post.tags?.some((t: any) => t.slug === category.id)
-        );
-
-        const paginated = paginate(filteredPosts, {
-          params: { lang, tag: category.id },
-          pageSize: 12
+    for (const level of levels) {
+      const levelPosts = posts.filter((post: any) => getLevelFromTags(post.tags) === level);
+      const paginated = paginate(levelPosts, {
+        params: { lang, level },
+        pageSize: 12
+      });
+      
+      if (paginated.length === 0) {
+        allPaths.push({
+          params: { lang, level, page: undefined },
+          props: { page: { data: [], start: 0, end: 0, total: 0, currentPage: 1, lastPage: 1, url: { current: `/${lang}/level/${level}` } } }
         });
-        
+      } else {
         allPaths.push(...paginated);
+      }
     }
   }
 
@@ -52,8 +54,8 @@ export async function getStaticPaths({ paginate }: any) {
 }
 
 const { page } = Astro.props as { page: any };
-const { lang, tag } = Astro.params;
-const posts = page.data;
+const { lang, level } = Astro.params;
+const posts = page.data || [];
 
 const titleMap: Record<string, string> = {
   french: 'French',
@@ -63,25 +65,28 @@ const titleMap: Record<string, string> = {
 };
 
 const displayLang = titleMap[lang as string] || lang;
-const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as string);
 ---
-<Layout title={`Teacher Jake ${filterLabel} - ${displayLang} (Page ${page.currentPage})`} currentLang={lang} currentTag={tag}>
-  <div class="mb-4 text-center pt-2">
-    <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-emerald-950 tracking-tight capitalize">{displayLang} {filterLabel}</h1>
-    <p class="text-lg text-slate-600 max-w-2xl mx-auto">Browse our collection of interactive {displayLang} {(filterLabel as string).toLowerCase()} and language learning activities.</p>
+<Layout 
+  title={`Teacher Jake Worksheets - ${displayLang} ${level ? level.toString().toUpperCase() : ''} (Page ${page.currentPage})`} 
+  currentLang={lang}
+  description={`Browse our collection of interactive ${displayLang} language learning materials, reading exercises, and quizzes.`}
+>
+  <div class="mb-4 text-center pt-4">
+    <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-[#06422f] tracking-tight capitalize">{displayLang} Worksheets</h1>
+    <p class="text-lg text-[#4a5568] max-w-2xl mx-auto">Browse our collection of interactive {displayLang} language learning materials, reading exercises, and quizzes.</p>
   </div>
-  
-  <LevelFilter currentLang={lang as string} currentTag={tag as string} currentLevel="all" />
 
+  <LevelFilter currentLang={lang as string} currentLevel={level as string} />
+  
   {posts.length === 0 ? (
     <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
-      <p class="text-lg font-medium">No {displayLang} {(filterLabel as string).toLowerCase()} found.</p>
-      <p class="mt-2 opacity-80">Make sure your Ghost posts have the exact tag "{tag}".</p>
+      <p class="text-lg font-medium">No {displayLang} {level?.toString().toUpperCase()} worksheets found.</p>
+      <p class="mt-2 opacity-80">Check back later for more content.</p>
     </div>
   ) : (
-    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-pagefind-body transition:name="content-grid">
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-pagefind-body transition:name="content-grid">
       {posts.map((post: any) => {
-        const levelTag = post.tags?.find((tagObj: any) => ['A1', 'A2', 'B1', 'B2'].includes(tagObj.name));
+        const levelTag = post.tags?.find((tag: any) => ['A1', 'A2', 'B1', 'B2'].includes(tag.name));
         return (
         <a href={`/gh/${post.slug}`} class="group bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
           <div class="aspect-video w-full shrink-0 bg-slate-50 loading-pulse flex items-center justify-center overflow-hidden relative border-b border-slate-100">
@@ -102,18 +107,18 @@ const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as s
             )}
           </div>
           
-          <div class="grow p-6 flex flex-col">
+          <div class="grow p-5 flex flex-col">
             <div class="flex items-center gap-2 mb-3">
               {levelTag && (
                 <span class="text-[10px] font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-                  {(lang || 'en').substring(0, 2).toUpperCase()}-{levelTag.name}
+                  {(lang || '').substring(0, 2).toUpperCase()}-{levelTag.name}
                 </span>
               )}
               <div class="flex items-center gap-2">
                 {levelTag && <div class="h-1 w-1 rounded-full bg-slate-200"></div>}
                 {(() => {
                   const displayTag = post.tags?.find((t: any) => 
-                    !['A1', 'A2', 'B1', 'B2', lang].includes(t.slug) && 
+                    !['A1', 'A2', 'B1', 'B2', lang].includes(t.name) && 
                     !t.name.startsWith('#')
                   );
                   return displayTag ? (
@@ -133,7 +138,7 @@ const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as s
               {post.custom_excerpt || post.excerpt}
             </p>
             
-            <div class="pt-4 mt-auto border-t border-slate-100 w-full flex justify-between items-center">
+            <div class="pt-4 mt-auto border-t border-slate-100 flex items-center justify-between">
                 <span class="text-[11px] font-extrabold tracking-widest text-blue-600 uppercase">Start Worksheet</span>
                 <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-md">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
@@ -143,7 +148,6 @@ const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as s
         </a>
       )})}
     </div>
-
   )}
 
   <Pagination page={page} />
