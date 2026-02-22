@@ -79,7 +79,7 @@ const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as s
       {posts.map((post: any) => {
         const levelTag = post.tags?.find((tagObj: any) => ['A1', 'A2', 'B1', 'B2'].includes(tagObj.name));
         return (
-        <a href={`/worksheet/${post.slug}`} class="group bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+        <a href={`/gh/${post.slug}`} class="group bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
           <div class="aspect-[16/9] w-full flex-shrink-0 bg-slate-50 loading-pulse flex items-center justify-center overflow-hidden relative border-b border-slate-100">
             {post.feature_image ? (
                <img 
@@ -105,7 +105,17 @@ const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as s
               )}
               <div class="flex items-center gap-2">
                 {levelTag && <div class="h-1 w-1 rounded-full bg-slate-200"></div>}
-                <span class="text-[10px] text-slate-400 font-medium tracking-wider">#{post.slug.substring(0, 4)}</span>
+                {(() => {
+                  const displayTag = post.tags?.find((t: any) => 
+                    !['A1', 'A2', 'B1', 'B2', lang].includes(t.slug) && 
+                    !t.name.startsWith('#')
+                  );
+                  return displayTag ? (
+                    <span class="text-[10px] font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">#{displayTag.name}</span>
+                  ) : (
+                    <span class="text-[10px] text-slate-400 font-medium tracking-wider uppercase">#{post.slug.substring(0, 4)}</span>
+                  );
+                })()}
               </div>
             </div>
 

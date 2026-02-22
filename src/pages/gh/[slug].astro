@@ -1,8 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { ghostClient } from '../../lib/ghost';
 import { getAllPosts } from '../../lib/ghost-utils';
 import { downloadGhostAsset, downloadGhostHtmlAssets } from '../../utils/downloadGhostAsset';
+import { transformComponentsToScripts } from '../../utils/transformComponentsToScripts';
 
 export async function getStaticPaths() {
   const posts = await getAllPosts({ include: ['tags'] });
@@ -21,6 +21,7 @@ if (post.feature_image) {
 
 if (post.html) {
     post.html = await downloadGhostHtmlAssets(post.html, post.slug, import.meta.env.GHOST_API_URL);
+    post.html = transformComponentsToScripts(post.html);
 }
 
 // Find if any tags require a specific web component script
@@ -39,14 +40,14 @@ for (const lang of supportedLangs) {
 
 // Script Mapping based on tagging
 const scriptMap: Record<string, string> = {
-    'information-gap': 'https://jmayereup.github.io/tj-components/dist/tj-info-gap.js',
-    'book': 'https://jmayereup.github.io/tj-components/dist/tj-chapter-book.js',
-    'quiz': 'https://jmayereup.github.io/tj-components/dist/tj-quiz-element.js',
-    'speed-review': 'https://jmayereup.github.io/tj-components/dist/tj-speed-review.js',
-    'grammar-hearts': 'https://jmayereup.github.io/tj-components/dist/tj-grammar-hearts.js',
-    'lbl-reader': 'https://jmayereup.github.io/tj-components/dist/tj-reader.js',
-    'listening': 'https://jmayereup.github.io/tj-components/dist/tj-listening.js',
-    'pronunciation': 'https://jmayereup.github.io/tj-components/dist/tj-pronunciation.js'
+    'information-gap': 'https://scripts.teacherjake.com/tj-info-gap.js',
+    'book': 'https://scripts.teacherjake.com/tj-chapter-book.js',
+    'quiz': 'https://scripts.teacherjake.com/tj-quiz-element.js',
+    'speed-review': 'https://scripts.teacherjake.com/tj-speed-review.js',
+    'grammar-hearts': 'https://scripts.teacherjake.com/tj-grammar-hearts.js',
+    'lbl-reader': 'https://scripts.teacherjake.com/tj-reader.js',
+    'listening': 'https://scripts.teacherjake.com/tj-listening.js',
+    'pronunciation': 'https://scripts.teacherjake.com/tj-pronunciation.js'
 };
 
 const scriptsToLoad: string[] = [];
@@ -57,11 +58,14 @@ for (const tagSlug of tagSlugs) {
 }
 ---
 <Layout title={`${post.title} | Teacher Jake Worksheets`} currentLang={currentLang}>
+  <Fragment slot="head">
+    {scriptsToLoad.map(scriptUrl => (
+      // We specify is:inline so Astro puts it exactly here without bundling,
+      // matching how Ghost expects it.
+      <script is:inline type={scriptUrl.includes('quiz') ? "module" : "text/javascript"} src={scriptUrl} defer crossorigin={scriptUrl.includes('quiz') ? "anonymous" : undefined}></script>
+    ))}
+  </Fragment>
   <div class="mb-6 pb-6 border-b border-slate-200">
-    <a href={currentLang === 'english' ? '/' : `/${currentLang}`} class="text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-2 mb-4">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-      Back to {currentLang} worksheets
-    </a>
     <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">{post.title}</h1>
     
     <div class="flex gap-2 mt-4 flex-wrap">
@@ -82,23 +86,17 @@ for (const tagSlug of tagSlugs) {
   </article>
 </Layout>
 
-{scriptsToLoad.map(scriptUrl => (
-  // We specify is:inline so Astro puts it exactly here without bundling,
-  // matching how Ghost expects it.
-  <script is:inline type={scriptUrl.includes('quiz') ? "module" : "text/javascript"} src={scriptUrl} defer crossorigin={scriptUrl.includes('quiz') ? "anonymous" : undefined}></script>
-))}
-
 <style is:global>
   @reference "../../styles/global.css";
   
   /* Add prose styling to make Ghost html output look good */
-  .worksheet-content h2 {
+  .worksheet-content :where(h2) {
     @apply text-3xl font-bold mt-10 mb-4 text-slate-800;
   }
-  .worksheet-content p {
+  .worksheet-content :where(p) {
     @apply mb-4 text-slate-700 leading-relaxed;
   }
-  .worksheet-content ul {
+  .worksheet-content :where(ul) {
     @apply list-disc list-inside mb-4 text-slate-700 space-y-2;
   }
   .worksheet-content :is(tj-info-gap, tj-chapter-book, tj-quiz-element, tj-speed-review, tj-grammar-hearts, tj-reader, tj-listening, tj-pronunciation) {

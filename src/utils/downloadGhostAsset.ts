@@ -86,6 +86,11 @@ export async function downloadGhostHtmlAssets(html: string, postId: string, ghos
               }
           }
 
+          // Skip javascript files to prevent 404s on old embedded scripts
+          if (url.endsWith('.js') || url.includes('/scripts/')) {
+              continue;
+          }
+
           // If relative, prepend ghost URL
           if (url.startsWith('/')) {
               url = `${ghostUrl}${url}`;
