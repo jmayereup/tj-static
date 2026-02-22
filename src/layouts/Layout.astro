@@ -3,9 +3,31 @@ import Navigation from '../components/Navigation.astro';
 import WorksheetFilter from '../components/WorksheetFilter.astro';
 import Search from '../components/Search.astro';
 import { ClientRouter } from 'astro:transitions';
+import { getImage } from 'astro:assets';
 import '../styles/global.css';
 
-const { title, currentLang, currentTag } = Astro.props;
+const { 
+  title, 
+  currentLang, 
+  currentTag, 
+  description = "Interactive language learning worksheets and tools for ESL students.",
+  image = "/tj-logo-book.png",
+  article = false
+} = Astro.props;
+
+const canonicalURL = new URL(Astro.url.pathname, Astro.site || Astro.url);
+
+// Optimize the social image
+const optimizedImage = image ? await getImage({ 
+  src: image, 
+  width: 1200, 
+  height: 630, 
+  format: 'jpg' 
+}) : null;
+
+const socialImageURL = optimizedImage 
+  ? new URL(optimizedImage.src, Astro.url)
+  : new URL("/tj-logo-book.png", Astro.url);
 ---
 <!doctype html>
 <html lang="en">
@@ -14,7 +36,25 @@ const { title, currentLang, currentTag } = Astro.props;
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>{title}</title>
+		
+    <!-- Primary Meta Tags -->
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content={article ? 'article' : 'website'} />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={socialImageURL} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={socialImageURL} />
 
     <!-- Google Fonts: Lora -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
