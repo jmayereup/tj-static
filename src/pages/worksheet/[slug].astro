@@ -101,29 +101,13 @@ for (const tagSlug of tagSlugs) {
   .worksheet-content ul {
     @apply list-disc list-inside mb-4 text-slate-700 space-y-2;
   }
-  .worksheet-content tj-quiz-element {
-    @apply my-8 block;
+  .worksheet-content :is(tj-info-gap, tj-chapter-book, tj-quiz-element, tj-speed-review, tj-grammar-hearts, tj-reader, tj-listening, tj-pronunciation) {
+    @apply my-2 block;
   }
 
-  /* Ghost Audio Card Styles */
+  /* Ghost Audio Card Styles - Hidden as they are only used to upload assets for web components */
   .worksheet-content .kg-audio-card {
-    @apply flex items-center bg-white border border-slate-200 rounded-2xl p-4 my-8 shadow-sm gap-4 max-w-full overflow-hidden;
-  }
-  .worksheet-content .kg-audio-thumbnail {
-    @apply w-20 h-20 rounded-xl object-cover shadow-sm bg-slate-50 flex-shrink-0;
-  }
-  .worksheet-content .kg-audio-player-container {
-    @apply flex-grow flex flex-col gap-2 min-w-0;
-  }
-  .worksheet-content .kg-audio-title {
-    @apply font-bold text-slate-900 text-lg leading-tight truncate;
-  }
-  .worksheet-content audio {
-    @apply w-full h-10 mt-1;
-  }
-  /* Hide custom Ghost player text/elements that won't work without their JS */
-  .worksheet-content .kg-audio-player-container > :not(audio, .kg-audio-title) {
-    @apply hidden;
+    display: none;
   }
 </style>
 
