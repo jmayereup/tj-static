@@ -4,6 +4,7 @@ import { Image } from 'astro:assets';
 import { ghostClient } from '../../lib/ghost';
 import { getAllPosts } from '../../lib/ghost-utils';
 import { LANGUAGES } from '../../utils/tags';
+import { pb } from '../../lib/pocketbase';
 import WorksheetFilter from '../../components/WorksheetFilter.astro';
 import LevelFilter from '../../components/LevelFilter.astro';
 import Pagination from '../../components/Pagination.astro';
@@ -11,6 +12,49 @@ import { downloadGhostAsset } from '../../utils/downloadGhostAsset';
 
 export async function getStaticPaths({ paginate }: any) {
   const allPaths: any[] = [];
+  
+  let allPbWorksheets: any[] = [];
+  try {
+    const records = await pb.collection('worksheets').getFullList({ sort: '-created' });
+    allPbWorksheets = records.map(record => {
+      let content = record.content;
+      if (typeof content === 'string') {
+        try { content = JSON.parse(content); } catch(e) {}
+      }
+      
+      const title = record.title || content?.title || 'Untitled';
+      let description = content?.readingText || '';
+      if (description.startsWith(title)) description = description.substring(title.length).trim();
+      description = description.substring(0, 120) + (description.length > 120 ? '...' : '');
+      
+      let imageUrl = record.image ? pb.files.getURL(record, record.image) : undefined;
+      
+      if (!imageUrl && record.videoUrl) {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = record.videoUrl?.match(regExp);
+        const ytId = (match && match[2].length === 11) ? match[2] : null;
+        if (ytId) imageUrl = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
+      }
+
+      return {
+        type: 'pb',
+        id: record.id,
+        title,
+        slug: record.id,
+        custom_excerpt: description,
+        feature_image: imageUrl,
+        tags: [
+          { name: record.level || 'All' },
+          ...(record.tags || []).map((t: string) => ({ name: t })),
+          { name: (record.language || 'english').toLowerCase() }
+        ],
+        published_at: record.created,
+        language: (record.language || 'english').toLowerCase()
+      };
+    });
+  } catch(e) {
+    console.warn("Could not fetch PocketBase worksheets in [...page].astro", e);
+  }
 
   for (const langObj of LANGUAGES) {
     const lang = langObj.code;
@@ -20,15 +64,19 @@ export async function getStaticPaths({ paginate }: any) {
           filter: `tag:${lang}`,
           include: ['tags']
       });
-      posts = await Promise.all(posts.map(async (post: any) => {
-        let feature_image = post.feature_image;
-        return { ...post, feature_image };
-      }));
+      posts = posts.map((post: any) => ({ ...post, type: 'gh' }));
     } catch (e) {
       console.error(`Failed to fetch Ghost posts for ${lang}`, e);
     }
     
-    const paginated = paginate(posts, {
+    const langPbWorksheets = allPbWorksheets.filter(ws => ws.language === lang);
+    const combinedPosts = [...posts, ...langPbWorksheets].sort((a, b) => {
+       const dateA = new Date(a.published_at || a.created_at || 0).getTime();
+       const dateB = new Date(b.published_at || b.created_at || 0).getTime();
+       return dateB - dateA;
+    });
+    
+    const paginated = paginate(combinedPosts, {
       params: { lang },
       pageSize: 12
     });
@@ -73,8 +121,10 @@ const displayLang = titleMap[lang as string] || lang;
     <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-pagefind-body transition:name="content-grid">
       {posts.map((post: any) => {
         const levelTag = post.tags?.find((tag: any) => ['A1', 'A2', 'B1', 'B2'].includes(tag.name));
+        const isPb = post.type === 'pb';
+        const href = isPb ? `/pb/${post.slug}` : `/gh/${post.slug}`;
         return (
-        <a href={`/gh/${post.slug}`} data-astro-reload class="group bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+        <a href={href} data-astro-reload class="group bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
           <div class="aspect-video w-full shrink-0 bg-slate-50 loading-pulse flex items-center justify-center overflow-hidden relative border-b border-slate-100">
             {post.feature_image ? (
                <Image 
@@ -126,7 +176,7 @@ const displayLang = titleMap[lang as string] || lang;
             </p>
             
             <div class="pt-4 mt-auto border-t border-slate-100 flex items-center justify-between">
-                <span class="text-[11px] font-extrabold tracking-widest text-blue-600 uppercase">Start Worksheet</span>
+                <span class="text-[11px] font-extrabold tracking-widest text-blue-600 uppercase">{isPb ? 'Start App' : 'Start Worksheet'}</span>
                 <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-md">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                 </div>
