@@ -21,9 +21,6 @@ export async function getStaticPaths({ paginate }: any) {
       });
       posts = await Promise.all(posts.map(async (post: any) => {
         let feature_image = post.feature_image;
-        if (feature_image) {
-          feature_image = await downloadGhostAsset(feature_image, post.slug);
-        }
         return { ...post, feature_image };
       }));
     } catch (e) {

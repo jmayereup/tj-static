@@ -30,9 +30,6 @@ try {
       description = description.substring(0, 120) + (description.length > 120 ? '...' : '');
       
       let imageUrl = record.image ? pb.files.getURL(record, record.image) : undefined;
-      if (imageUrl) {
-        imageUrl = await downloadAsset(imageUrl, record.id, record.image);
-      }
       
       if (!imageUrl && record.videoUrl) {
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;

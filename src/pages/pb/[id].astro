@@ -21,9 +21,6 @@ const { worksheet } = Astro.props as { worksheet: any };
 let content = typeof worksheet.content === 'string' ? JSON.parse(worksheet.content || '{}') : (worksheet.content || {});
 
 let imageUrl = worksheet.image ? pb.files.getURL(worksheet, worksheet.image) : undefined;
-if (imageUrl) {
-  imageUrl = await downloadAsset(imageUrl, worksheet.id, worksheet.image);
-}
 
 let audioFileUrl = worksheet.audioFile ? pb.files.getURL(worksheet, worksheet.audioFile) : undefined;
 if (audioFileUrl) {
