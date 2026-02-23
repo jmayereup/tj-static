@@ -65,13 +65,13 @@ const currentLang = (worksheet.language || 'English').toLowerCase();
   }
 </style>
 
-<link rel="stylesheet" href="https://jmayereup.github.io/language-learning-worksheets/dist/wc/language-learning-worksheets.css">
+<link rel="stylesheet" href="https://language-learning-worksheets.pages.dev/wc/language-learning-worksheets.css">
 
 <script is:inline>
   // Ensure the script is only loaded when component is used
   if (!customElements.get('tj-pocketbase-worksheet')) {
      const script = document.createElement('script');
-     script.src = 'https://jmayereup.github.io/language-learning-worksheets/dist/wc/tj-pocketbase-worksheet.es.js'; 
+     script.src = 'https://language-learning-worksheets.pages.dev/wc/tj-pocketbase-worksheet.es.js'; 
      script.type = 'module';
      script.defer = true;
      document.head.appendChild(script);

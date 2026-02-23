@@ -93,7 +93,7 @@ const finalScripts = Array.from(scriptsToLoad);
   article={true}
 >
   <Fragment slot="head">
-    <link rel="stylesheet" href="https://jmayereup.github.io/language-learning-worksheets/dist/wc/language-learning-worksheets.css">
+    <!-- <link rel="stylesheet" href="https://language-learning-worksheets.pages.dev/wc/language-learning-worksheets.css"> -->
     {finalScripts.map(scriptUrl => (
       <script is:inline type="module" src={scriptUrl} defer crossorigin="anonymous"></script>
     ))}

@@ -6,7 +6,7 @@ import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://english.teacherjake.com',
+  site: 'https://www.teacherjake.com',
   prefetch: true,
   integrations: [
     sitemap(),
