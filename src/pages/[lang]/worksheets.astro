@@ -66,7 +66,7 @@ const displayLang = titleMap[lang as string] || lang;
 >
   <div class="mb-8 text-center pt-4">
     <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-[#06422f] tracking-tight">{displayLang} Worksheets</h1>
-    <p class="text-lg text-[#4a5568] max-w-2xl mx-auto">Browse our collection of interactive {displayLang} apps and digital worksheets.</p>
+    <p class="text-lg text-[#4a5568] max-w-2xl mx-auto">Browse our collection of interactive {displayLang} digital worksheets.</p>
   </div>
 
   {worksheets.length === 0 ? (
@@ -76,18 +76,14 @@ const displayLang = titleMap[lang as string] || lang;
     </div>
   ) : (
     <div class="mb-16">
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
-          <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-          Interactive Apps
-        </h2>
-        
+      <div class="flex flex-row items-center justify-center gap-2 md:gap-3 py-2 mt-2 md:mt-0 mb-6 max-w-4xl mx-auto">
+        <span class="text-sm font-semibold text-slate-400 mr-1 uppercase tracking-wider">Tags</span>
         <!-- Tag Filter -->
-        <div class="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar" id="pb-tag-filters">
-          <button class="filter-btn active px-4 py-1.5 rounded-full text-sm font-semibold transition-all bg-emerald-600 text-white shadow-sm" data-filter="all">All</button>
-          <button class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold transition-all bg-white text-slate-600 border border-slate-200 hover:border-emerald-300" data-filter="science">Science</button>
-          <button class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold transition-all bg-white text-slate-600 border border-slate-200 hover:border-emerald-300" data-filter="video">Video</button>
-          <button class="filter-btn px-4 py-1.5 rounded-full text-sm font-semibold transition-all bg-white text-slate-600 border border-slate-200 hover:border-emerald-300" data-filter="fable">Fable</button>
+        <div class="flex flex-wrap items-center justify-center gap-2 md:gap-3" id="pb-tag-filters">
+          <button class="filter-btn active whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold transition-all uppercase tracking-wide bg-blue-600 text-white shadow-sm border border-blue-600" data-filter="all">All</button>
+          <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold transition-all uppercase tracking-wide bg-white text-slate-500 border border-slate-200 hover:border-blue-300 hover:text-blue-600" data-filter="science">Science</button>
+          <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold transition-all uppercase tracking-wide bg-white text-slate-500 border border-slate-200 hover:border-blue-300 hover:text-blue-600" data-filter="video">Video</button>
+          <button class="filter-btn whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold transition-all uppercase tracking-wide bg-white text-slate-500 border border-slate-200 hover:border-blue-300 hover:text-blue-600" data-filter="fable">Fable</button>
         </div>
       </div>
       
@@ -156,11 +152,11 @@ const displayLang = titleMap[lang as string] || lang;
         btn.addEventListener('click', () => {
           // Update active states
           filterBtns.forEach(b => {
-            b.classList.remove('bg-emerald-600', 'text-white', 'shadow-sm', 'active');
-            b.classList.add('bg-white', 'text-slate-600');
+             b.classList.remove('bg-blue-600', 'text-white', 'shadow-sm', 'border-blue-600', 'active');
+             b.classList.add('bg-white', 'text-slate-500', 'border-slate-200');
           });
-          btn.classList.add('bg-emerald-600', 'text-white', 'shadow-sm', 'active');
-          btn.classList.remove('bg-white', 'text-slate-600');
+          btn.classList.add('bg-blue-600', 'text-white', 'shadow-sm', 'border-blue-600', 'active');
+          btn.classList.remove('bg-white', 'text-slate-500', 'border-slate-200');
           
           const filter = btn.getAttribute('data-filter') || 'all';
           
