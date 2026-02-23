@@ -55,7 +55,7 @@ export async function downloadGhostAsset(url: string, id: string): Promise<strin
     return publicUrl;
   } catch (err) {
     console.error(`Failed to download Ghost asset ${url}:`, err);
-    return url; // fallback to original URL on failure
+    return ''; // return empty string on failure to trigger fallback UI
   }
 }
 

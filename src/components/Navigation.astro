@@ -25,6 +25,7 @@ const { currentLang = 'english' } = Astro.props;
       {languages.map(lang => (
         <a 
           href={`/${lang.code}`}
+          data-astro-reload
           data-astro-prefetch="hover"
           class={`nav-link whitespace-nowrap px-4 py-2 rounded-lg font-medium transition-colors ${
             currentLang === lang.code 
