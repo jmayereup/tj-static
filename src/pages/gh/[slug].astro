@@ -4,6 +4,7 @@ import { Image } from 'astro:assets';
 import { getAllPosts } from '../../lib/ghost-utils';
 import { downloadGhostAsset, downloadGhostHtmlAssets } from '../../utils/downloadGhostAsset';
 import { transformComponentsToScripts } from '../../utils/transformComponentsToScripts';
+import { transformYouTubeEmbeds } from '../../utils/transformYouTubeEmbeds';
 
 export async function getStaticPaths() {
   const posts = await getAllPosts({ include: ['tags'] });
@@ -24,6 +25,7 @@ if (post.feature_image) {
 if (post.html) {
     post.html = await downloadGhostHtmlAssets(post.html, post.slug, import.meta.env.GHOST_API_URL);
     post.html = transformComponentsToScripts(post.html);
+    post.html = transformYouTubeEmbeds(post.html);
 }
 
 // Find if any tags require a specific web component script
