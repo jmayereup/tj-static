@@ -91,6 +91,11 @@ export async function downloadGhostHtmlAssets(html: string, postId: string, ghos
               continue;
           }
 
+          // Skip YouTube embeds as we want to render the iframes natively
+          if (url.includes('youtube.com/') || url.includes('youtu.be/')) {
+              continue;
+          }
+
           // If relative, prepend ghost URL
           if (url.startsWith('/')) {
               url = `${ghostUrl}${url}`;
