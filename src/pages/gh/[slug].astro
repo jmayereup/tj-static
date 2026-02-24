@@ -131,8 +131,23 @@ const finalScripts = Array.from(scriptsToLoad);
   @reference "../../styles/global.css";
   
   /* Add prose styling to make Ghost html output look good */
+  .worksheet-content :where(h1) {
+    @apply text-4xl font-extrabold mt-12 mb-6 text-slate-900 tracking-tight;
+  }
   .worksheet-content :where(h2) {
-    @apply text-3xl font-bold mt-10 mb-4 text-slate-800;
+    @apply text-3xl font-bold mt-10 mb-4 text-slate-800 tracking-tight;
+  }
+  .worksheet-content :where(h3) {
+    @apply text-2xl font-bold mt-8 mb-4 text-slate-800;
+  }
+  .worksheet-content :where(h4) {
+    @apply text-xl font-bold mt-6 mb-2 text-slate-800;
+  }
+  .worksheet-content :where(h5) {
+    @apply text-lg font-bold mt-4 mb-2 text-slate-800;
+  }
+  .worksheet-content :where(h6) {
+    @apply text-base font-bold mt-4 mb-2 text-slate-800 uppercase tracking-wide;
   }
   .worksheet-content :where(p) {
     @apply mb-4 text-slate-700 leading-relaxed;
@@ -141,7 +156,12 @@ const finalScripts = Array.from(scriptsToLoad);
     @apply list-disc list-inside mb-4 text-slate-700 space-y-2;
   }
   .worksheet-content :is(tj-info-gap, tj-chapter-book, tj-quiz-element, tj-speed-review, tj-grammar-hearts, tj-reader, tj-listening, tj-pronunciation) {
-    @apply my-4 block w-full mx-auto;
+    @apply my-6 block w-full mx-auto;
+  }
+
+  /* Reduce top margin for the very first heading in the content */
+  .worksheet-content > :first-child:is(h1, h2, h3, h4, h5, h6) {
+    @apply mt-2;
   }
 
   /* Ghost Audio Card Styles - Hidden as they are only used to upload assets for web components */
