@@ -7,10 +7,58 @@ import { LANGUAGES, CATEGORY_FILTERS } from '../../../../utils/tags';
 import WorksheetFilter from '../../../../components/WorksheetFilter.astro';
 import LevelFilter from '../../../../components/LevelFilter.astro';
 import Pagination from '../../../../components/Pagination.astro';
+import { pb } from '../../../../lib/pocketbase';
 import { downloadGhostAsset } from '../../../../utils/downloadGhostAsset';
+import { downloadAsset } from '../../../../utils/downloadAsset';
 
 export async function getStaticPaths({ paginate }: any) {
   const allPaths: any[] = [];
+
+  // Fetch all Pocketbase worksheets once
+  let pbWorksheets: any[] = [];
+  try {
+    const records = await pb.collection('worksheets').getFullList({ sort: '-created' });
+    pbWorksheets = await Promise.all(records.map(async (record) => {
+      let content = record.content;
+      if (typeof content === 'string') {
+        try { content = JSON.parse(content); } catch(e) {}
+      }
+      
+      const title = record.title || content?.title || 'Untitled';
+      let description = content?.readingText || '';
+      if (description.startsWith(title)) description = description.substring(title.length).trim();
+      description = description.substring(0, 120) + (description.length > 120 ? '...' : '');
+      
+      let imageUrl = record.image ? pb.files.getURL(record, record.image) : undefined;
+      if (imageUrl) {
+        imageUrl = await downloadAsset(imageUrl, record.id, record.image);
+      }
+      
+      if (!imageUrl && record.videoUrl) {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = record.videoUrl?.match(regExp);
+        const ytId = (match && match[2].length === 11) ? match[2] : null;
+        if (ytId) imageUrl = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
+      }
+      
+      // Map to Ghost-like structure for the template
+      return { 
+        id: record.id,
+        slug: record.id, // For the link construction if needed, though we use different prefix
+        title, 
+        custom_excerpt: description, 
+        feature_image: imageUrl, 
+        language: (record.language || 'English').toLowerCase(), 
+        level: record.level || 'All',
+        created_at: record.created,
+        tags: [{ name: record.level || 'All', slug: (record.level || 'All').toLowerCase() }],
+        lessonType: record.lessonType,
+        source: 'pocketbase'
+      };
+    }));
+  } catch (e) {
+    console.warn("Failed to fetch Pocketbase worksheets for tag pages", e);
+  }
 
   for (const langObj of LANGUAGES) {
     const lang = langObj.code;
@@ -20,10 +68,7 @@ export async function getStaticPaths({ paginate }: any) {
           filter: `tag:${lang}`,
           include: ['tags']
       });
-      posts = await Promise.all(posts.map(async (post: any) => {
-        let feature_image = post.feature_image;
-        return { ...post, feature_image };
-      }));
+      posts = posts.map((post: any) => ({ ...post, source: 'ghost' }));
     } catch (e) {
       console.error(`Failed to fetch Ghost posts for ${lang}`, e);
     }
@@ -31,12 +76,27 @@ export async function getStaticPaths({ paginate }: any) {
     // For each category, filter posts locally
     const filterCategories = CATEGORY_FILTERS.filter(f => f.id !== 'all');
     for (const category of filterCategories) {
-        // Find posts that have the exact tag slug
-        const filteredPosts = posts.filter(post => 
+        // Find Ghost posts that have the exact tag slug
+        let filteredItems = posts.filter(post => 
             post.tags?.some((t: any) => t.slug === category.id)
         );
 
-        const paginated = paginate(filteredPosts, {
+        // Add Pocketbase worksheets if category is 'speaking'
+        if (category.id === 'speaking') {
+          const matchingPb = pbWorksheets.filter(ws => 
+            ws.language === lang && ws.lessonType === 'information-gap'
+          );
+          filteredItems = [...filteredItems, ...matchingPb];
+          
+          // Sort combined items by creation date
+          filteredItems.sort((a, b) => {
+            const dateA = new Date(a.created_at || a.published_at || 0).getTime();
+            const dateB = new Date(b.created_at || b.published_at || 0).getTime();
+            return dateB - dateA;
+          });
+        }
+
+        const paginated = paginate(filteredItems, {
           params: { lang, tag: category.id },
           pageSize: 12
         });
@@ -78,9 +138,10 @@ const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as s
   ) : (
     <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-pagefind-body transition:name="content-grid">
       {posts.map((post: any) => {
-        const levelTag = post.tags?.find((tagObj: any) => ['A1', 'A2', 'B1', 'B2'].includes(tagObj.name));
+        const levelTag = post.tags?.find((tagObj: any) => ['A1', 'A2', 'B1', 'B2'].includes(tagObj.name)) || (post.level && post.level !== 'All' ? { name: post.level } : null);
+        const href = post.source === 'pocketbase' ? `/pb/${post.id}` : `/gh/${post.slug}`;
         return (
-        <a href={`/gh/${post.slug}`} class="group bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+        <a href={href} class="group bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
           <div class="aspect-video w-full shrink-0 bg-slate-50 loading-pulse flex items-center justify-center overflow-hidden relative border-b border-slate-100">
             {post.feature_image ? (
                <Image 
