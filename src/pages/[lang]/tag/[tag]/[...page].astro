@@ -25,8 +25,8 @@ export async function getStaticPaths({ paginate }: any) {
       }
       
       const title = record.title || content?.title || 'Untitled';
-      let description = content?.readingText || '';
-      if (description.startsWith(title)) description = description.substring(title.length).trim();
+      let description = record.seo || content?.readingText || '';
+      if (!record.seo && description.startsWith(title)) description = description.substring(title.length).trim();
       description = description.substring(0, 120) + (description.length > 120 ? '...' : '');
       
       let imageUrl = record.image ? pb.files.getURL(record, record.image) : undefined;
