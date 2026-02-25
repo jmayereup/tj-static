@@ -15,6 +15,15 @@ const {
   article = false
 } = Astro.props;
 
+// Map full language names to ISO 639-1 codes for Pagefind stemming support
+const langMap: Record<string, string> = {
+  english: 'en',
+  french: 'fr',
+  german: 'de',
+  spanish: 'es'
+};
+const isoLang = langMap[currentLang as string] || currentLang || 'en';
+
 const canonicalURL = new URL(Astro.url.pathname, Astro.site || Astro.url);
 
 // Optimize the social image
@@ -30,7 +39,7 @@ const socialImageURL = optimizedImage
   : new URL("/tj-logo-book.png", Astro.url);
 ---
 <!doctype html>
-<html lang={currentLang || "en"}>
+<html lang={isoLang}>
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
