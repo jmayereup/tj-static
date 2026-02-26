@@ -100,19 +100,10 @@ const finalScripts = Array.from(scriptsToLoad);
       <script is:inline type="module" src={scriptUrl} defer crossorigin="anonymous"></script>
     ))}
   </Fragment>
-  <div class="mb-6 pb-6 border-b border-slate-200">
-    <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">{post.title}</h1>
-    
-    <div class="flex gap-2 mt-4 flex-wrap">
-      {post.tags?.map((tag: any) => (
-        <span class="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider">{tag.name}</span>
-      ))}
-    </div>
-  </div>
 
   <article class={`prose lg:prose-xl max-w-[720px] mx-auto ${tagClassList}`} data-pagefind-body>
     {post.feature_image && (
-        <div class="w-full max-h-[400px] bg-slate-50 rounded-2xl shadow-md mx-auto my-8 overflow-hidden flex justify-center">
+        <div class="w-full max-h-[400px] bg-slate-50 sm:rounded-2xl sm:shadow-md mx-auto my-4 sm:my-8 overflow-hidden flex justify-center">
           <Image 
             src={post.feature_image} 
             alt={post.title} 
@@ -130,6 +121,11 @@ const finalScripts = Array.from(scriptsToLoad);
 <style is:global>
   @reference "../../styles/global.css";
   
+  /* Standard content padding on mobile */
+  .worksheet-content > *:not(tj-info-gap, tj-chapter-book, tj-quiz-element, tj-speed-review, tj-grammar-hearts, tj-reader, tj-listening, tj-pronunciation) {
+    @apply px-4 sm:px-0;
+  }
+
   /* Add prose styling to make Ghost html output look good */
   .worksheet-content :where(h1) {
     @apply text-4xl font-extrabold mt-12 mb-6 text-slate-900 tracking-tight;

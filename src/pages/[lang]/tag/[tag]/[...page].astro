@@ -124,7 +124,8 @@ const displayLang = titleMap[lang as string] || lang;
 const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as string);
 ---
 <Layout title={`Teacher Jake ${filterLabel} - ${displayLang} (Page ${page.currentPage})`} currentLang={lang} currentTag={tag}>
-  <div class="mb-4 text-center pt-2">
+  <div class="px-4">
+    <div class="mb-4 text-center pt-2">
     <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-emerald-950 tracking-tight capitalize">{displayLang} {filterLabel}</h1>
     <p class="text-lg text-slate-600 max-w-2xl mx-auto">Browse our collection of interactive {displayLang} {(filterLabel as string).toLowerCase()} and language learning activities.</p>
   </div>
@@ -208,4 +209,5 @@ const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as s
   )}
 
   <Pagination page={page} />
+  </div>
 </Layout>

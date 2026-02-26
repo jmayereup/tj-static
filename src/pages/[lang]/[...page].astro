@@ -115,7 +115,8 @@ const displayLang = titleMap[lang as string] || lang;
   currentLang={lang}
   description={`Browse our collection of interactive ${displayLang} language learning materials.`}
 >
-  <div class="mb-4 text-center pt-4">
+  <div class="px-4">
+    <div class="mb-4 text-center pt-4">
     <h1
       class="text-4xl md:text-5xl font-extrabold mb-4 text-[#06422f] tracking-tight capitalize"
     >
@@ -255,4 +256,5 @@ const displayLang = titleMap[lang as string] || lang;
   }
 
   <Pagination page={page} />
+  </div>
 </Layout>
