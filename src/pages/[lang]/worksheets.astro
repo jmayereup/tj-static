@@ -122,10 +122,12 @@ const displayLang = titleMap[lang as string] || lang;
                     </div>
                 </div>
                 
-                <h3 class="font-extrabold text-blue-600 text-[1.15rem] leading-tight mb-2 group-hover:text-blue-800 transition-colors line-clamp-2 min-h-12">{ws.title}</h3>
-                {ws.description && (
-                  <p class="text-slate-500 text-sm leading-relaxed line-clamp-2 mb-0 grow">{ws.description}</p>
-                )}
+                <div class="min-h-24">
+                  <h3 class="font-extrabold text-blue-600 text-[1.15rem] leading-tight mb-2 group-hover:text-blue-800 transition-colors line-clamp-2">{ws.title}</h3>
+                  {ws.description && (
+                    <p class="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-0 grow">{ws.description}</p>
+                  )}
+                </div>
                 
                 <div class="pt-4 mt-auto border-t border-slate-100 flex items-center justify-between">
                     <span class="text-[11px] font-extrabold tracking-widest text-blue-600 uppercase">Start App</span>

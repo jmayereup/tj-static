@@ -108,7 +108,7 @@ const filterLabel = CATEGORY_FILTERS.find((f: any) => f.id === tag)?.label || (t
             )}
           </div>
           
-          <div class="grow p-6 flex flex-col">
+          <div class="grow p-5 flex flex-col">
             <div class="flex items-center gap-2 mb-3">
               {levelTag && (
                 <span class="text-[10px] font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
@@ -131,13 +131,15 @@ const filterLabel = CATEGORY_FILTERS.find((f: any) => f.id === tag)?.label || (t
               </div>
             </div>
 
-            <h2 class="font-extrabold text-blue-600 text-[1.15rem] leading-tight mb-2 group-hover:text-blue-800 transition-colors line-clamp-2 min-h-12">
-              {post.title}
-            </h2>
-            
-            <p class="text-slate-500 text-sm leading-relaxed line-clamp-2 mb-0 grow">
-              {post.custom_excerpt || post.excerpt}
-            </p>
+            <div class="min-h-24">
+              <h2 class="font-extrabold text-blue-600 text-[1.15rem] leading-tight mb-2 group-hover:text-blue-800 transition-colors line-clamp-2">
+                {post.title}
+              </h2>
+              
+              <p class="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-0 grow">
+                {post.custom_excerpt || post.excerpt}
+              </p>
+            </div>
             
             <div class="pt-4 mt-auto border-t border-slate-100 w-full flex justify-between items-center">
                 <span class="text-[11px] font-extrabold tracking-widest text-blue-600 uppercase">Start Worksheet</span>
