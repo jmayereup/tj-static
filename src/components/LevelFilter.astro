@@ -15,7 +15,7 @@ const LEVELS = [
   { label: 'B2', id: 'b2' },
 ];
 ---
-<div class="flex flex-wrap items-center justify-center gap-2 md:gap-3 py-2 mt-2 md:mt-0 mb-4 max-w-2xl mx-auto">
+<div class="flex flex-wrap items-center px-0 justify-center gap-2 md:gap-3 py-2 mt-2 md:mt-0 mb-4 min-w-max mx-0">
   <span class="text-sm font-semibold text-slate-400 mr-1 uppercase tracking-wider">Level</span>
   {LEVELS.map(level => {
     const isActive = currentLevel === level.id;
