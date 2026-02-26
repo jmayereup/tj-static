@@ -40,7 +40,7 @@ const currentLang = (worksheet.language || 'English').toLowerCase();
   title={`${worksheet?.title || 'App'} | Teacher Jake App`} 
   currentLang={currentLang} 
   currentTag="worksheets"
-  description={worksheet?.description}
+  description={worksheet?.seo || worksheet?.description}
   image={ogImage}
 >
   <div class="mb-6 pb-6 border-b border-slate-200">
