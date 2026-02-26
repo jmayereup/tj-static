@@ -7,9 +7,57 @@ import LevelFilter from '../../../../../../components/LevelFilter.astro';
 import Pagination from '../../../../../../components/Pagination.astro';
 import { downloadGhostAsset } from '../../../../../../utils/downloadGhostAsset';
 
+import { pb } from '../../../../../../lib/pocketbase';
+import { downloadAsset } from '../../../../../../utils/downloadAsset';
+
 export async function getStaticPaths({ paginate }: any) {
   const allPaths: any[] = [];
   const levels = ['a1', 'a2', 'b1', 'b2'];
+
+  // Fetch all Pocketbase worksheets once
+  let pbWorksheets: any[] = [];
+  try {
+    const records = await pb.collection('worksheets').getFullList({ sort: '-created' });
+    pbWorksheets = await Promise.all(records.map(async (record) => {
+      let content = record.content;
+      if (typeof content === 'string') {
+        try { content = JSON.parse(content); } catch(e) {}
+      }
+      
+      const title = record.title || content?.title || 'Untitled';
+      let description = record.seo || content?.readingText || '';
+      if (!record.seo && description.startsWith(title)) description = description.substring(title.length).trim();
+      description = description.substring(0, 120) + (description.length > 120 ? '...' : '');
+      
+      let imageUrl = record.image ? pb.files.getURL(record, record.image) : undefined;
+      if (imageUrl) {
+        imageUrl = await downloadAsset(imageUrl, record.id, record.image);
+      }
+      
+      if (!imageUrl && record.videoUrl) {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = record.videoUrl?.match(regExp);
+        const ytId = (match && match[2].length === 11) ? match[2] : null;
+        if (ytId) imageUrl = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
+      }
+      
+      return { 
+        id: record.id,
+        slug: record.id,
+        title, 
+        custom_excerpt: description, 
+        feature_image: imageUrl, 
+        language: (record.language || 'English').toLowerCase(), 
+        level: record.level || 'All',
+        created_at: record.created,
+        tags: [{ name: record.level || 'All', slug: (record.level || 'All').toLowerCase() }],
+        lessonType: record.lessonType,
+        source: 'pocketbase'
+      };
+    }));
+  } catch (e) {
+    console.warn("Failed to fetch Pocketbase worksheets for level-filtered tag pages", e);
+  }
 
   for (const langObj of LANGUAGES) {
     const lang = langObj.code;
@@ -19,10 +67,7 @@ export async function getStaticPaths({ paginate }: any) {
           filter: `tag:${lang}`,
           include: ['tags']
       });
-      posts = await Promise.all(posts.map(async (post: any) => {
-        let feature_image = post.feature_image;
-        return { ...post, feature_image };
-      }));
+      posts = posts.map((post: any) => ({ ...post, source: 'ghost' }));
     } catch (e) {
       console.error(`Failed to fetch Ghost posts for ${lang}`, e);
     }
@@ -30,13 +75,28 @@ export async function getStaticPaths({ paginate }: any) {
     // For each category, filter posts locally
     const filterCategories = CATEGORY_FILTERS.filter((f: any) => f.id !== 'all');
     for (const category of filterCategories) {
-        // Find posts that have the exact tag slug
-        const categoryPosts = posts.filter((post: any) => 
+        // Find Ghost posts that have the exact tag slug
+        let categoryItems = posts.filter((post: any) => 
             post.tags?.some((t: any) => t.slug === category.id)
         );
 
+        // Add Pocketbase worksheets if category is 'speaking' or 'worksheet'
+        if (category.id === 'speaking' || category.id === 'worksheet') {
+          const typeMatch = category.id === 'speaking' ? 'information-gap' : 'worksheet';
+          const matchingPb = pbWorksheets.filter(ws => 
+            ws.language === lang && ws.lessonType === typeMatch
+          );
+          categoryItems = [...categoryItems, ...matchingPb];
+        }
+
         for (const level of levels) {
-            const levelPosts = categoryPosts.filter((post: any) => getLevelFromTags(post.tags) === level);
+            const levelPosts = categoryItems.filter((post: any) => {
+               if (post.source === 'pocketbase') {
+                 return (post.level || 'All').toLowerCase() === level;
+               }
+               return getLevelFromTags(post.tags) === level;
+            });
+
             const paginated = paginate(levelPosts, {
               params: { lang, tag: category.id, level },
               pageSize: 12

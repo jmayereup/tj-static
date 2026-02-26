@@ -81,10 +81,11 @@ export async function getStaticPaths({ paginate }: any) {
             post.tags?.some((t: any) => t.slug === category.id)
         );
 
-        // Add Pocketbase worksheets if category is 'speaking'
-        if (category.id === 'speaking') {
+        // Add Pocketbase worksheets if category is 'speaking' or 'worksheet'
+        if (category.id === 'speaking' || category.id === 'worksheet') {
+          const typeMatch = category.id === 'speaking' ? 'information-gap' : 'worksheet';
           const matchingPb = pbWorksheets.filter(ws => 
-            ws.language === lang && ws.lessonType === 'information-gap'
+            ws.language === lang && ws.lessonType === typeMatch
           );
           filteredItems = [...filteredItems, ...matchingPb];
           

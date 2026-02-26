@@ -1,14 +1,11 @@
 ---
 import Layout from "../../layouts/Layout.astro";
 import { Image } from "astro:assets";
-import { ghostClient } from "../../lib/ghost";
 import { getAllPosts } from "../../lib/ghost-utils";
 import { LANGUAGES } from "../../utils/tags";
 import { pb } from "../../lib/pocketbase";
-import WorksheetFilter from "../../components/WorksheetFilter.astro";
 import LevelFilter from "../../components/LevelFilter.astro";
 import Pagination from "../../components/Pagination.astro";
-import { downloadGhostAsset } from "../../utils/downloadGhostAsset";
 
 export async function getStaticPaths({ paginate }: any) {
   const allPaths: any[] = [];

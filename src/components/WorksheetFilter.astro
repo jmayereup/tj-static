@@ -6,12 +6,10 @@ const { currentLang, currentTag = 'all' } = Astro.props;
 <div class="flex flex-wrap items-center justify-start md:justify-around gap-3 md:gap-4 py-1">
   {CATEGORY_FILTERS.map(filter => {
     const isAll = filter.id === 'all';
-    const isWorksheets = filter.id === 'worksheets';
     const isActive = currentTag === filter.id;
     
     let href = `/${currentLang}/tag/${filter.id}`;
     if (isAll) href = `/${currentLang}`;
-    if (isWorksheets) href = `/${currentLang}/worksheets`;
 
     return (
       <a 
