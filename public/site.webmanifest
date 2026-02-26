@@ -1,0 +1,25 @@
+{
+  "name": "Teacher Jake",
+  "short_name": "Teacher Jake",
+  "icons": [
+    {
+      "src": "/tj-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/tj-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/tj-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "theme_color": "#06422f",
+  "background_color": "#f8fafc",
+  "display": "standalone",
+  "start_url": "/"
+}

@@ -2,7 +2,82 @@
 import { Image } from 'astro:assets';
 import logoImage from '../assets/tj-logo-book.png';
 import Layout from '../layouts/Layout.astro';
-import { LANGUAGES } from '../utils/tags';
+import { getAllPosts } from "../lib/ghost-utils";
+import { pb } from "../lib/pocketbase";
+
+let recentPosts: any[] = [];
+try {
+  // Fetch Pocketbase worksheets
+  const records = await pb
+    .collection("worksheets")
+    .getFullList({ sort: "-created" });
+  
+  const pbWorksheets = records.map((record) => {
+    let content = record.content;
+    if (typeof content === "string") {
+      try {
+        content = JSON.parse(content);
+      } catch (e) {}
+    }
+
+    const title = record.title || content?.title || "Untitled";
+    let description = record.seo || content?.readingText || "";
+    if (!record.seo && description.startsWith(title))
+      description = description.substring(title.length).trim();
+    description =
+      description.substring(0, 120) + (description.length > 120 ? "..." : "");
+
+    let imageUrl = record.image
+      ? pb.files.getURL(record, record.image)
+      : undefined;
+
+    if (!imageUrl && record.videoUrl) {
+      const regExp =
+        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+      const match = record.videoUrl?.match(regExp);
+      const ytId = match && match[2].length === 11 ? match[2] : null;
+      if (ytId)
+        imageUrl = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
+    }
+
+    return {
+      type: "pb",
+      id: record.id,
+      title,
+      slug: record.id,
+      custom_excerpt: description,
+      feature_image: imageUrl,
+      tags: [
+        { name: record.level || "All" },
+        ...(record.tags || []).map((t: string) => ({ name: t })),
+        { name: (record.language || "english").toLowerCase() },
+      ],
+      published_at: record.created,
+      language: (record.language || "english").toLowerCase(),
+    };
+  });
+
+  // Fetch Ghost posts
+  let ghostPosts: any[] = [];
+  try {
+    ghostPosts = await getAllPosts({
+      include: ["tags"],
+    });
+    ghostPosts = ghostPosts.map((post: any) => ({ ...post, type: "gh" }));
+  } catch (e) {
+    console.error(`Failed to fetch Ghost posts for home page`, e);
+  }
+
+  // Combine and sort
+  recentPosts = [...ghostPosts, ...pbWorksheets].sort((a, b) => {
+    const dateA = new Date(a.published_at || a.created_at || 0).getTime();
+    const dateB = new Date(b.published_at || b.created_at || 0).getTime();
+    return dateB - dateA;
+  }).slice(0, 4);
+
+} catch (e) {
+  console.error("Error fetching recent posts for home page:", e);
+}
 
 const description = "Welcome to Teacher Jake. Explore our collection of interactive learning apps, digital worksheets, reading exercises, and language quizzes designed for classrooms or home learning.";
 ---
@@ -12,7 +87,8 @@ const description = "Welcome to Teacher Jake. Explore our collection of interact
 >
   <div class="max-w-5xl mx-auto px-4 py-12">
     <div class="text-center mb-16 pt-8">
-      <Image src={logoImage} alt="TJ Logo" class="h-40 w-auto rounded shadow-inner mx-auto mb-4"/>
+      <h3 class="text-4xl font-bold text-green-800 mb-4">Teacher Jake's Language Lessons</h3>
+      <!-- <Image src={logoImage} alt="TJ Logo" class="h-40 w-auto rounded shadow-inner mx-auto mb-4"/> -->
       <p class="text-xl text-[#4a5568] max-w-3xl mx-auto leading-relaxed">
         Discover a rich library of digital worksheets, engaging games, and reading exercises.
         Whether you're teaching in a classroom or learning at home, our tools are designed to 
@@ -21,15 +97,113 @@ const description = "Welcome to Teacher Jake. Explore our collection of interact
     </div>
 
     <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-16">
-      {LANGUAGES.map((langObj) => (
-        <a href={`/${langObj.code}`} class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-100 text-center hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col items-center gap-4">
-          <div class="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300">
-             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path></svg>
-          </div>
-          <h2 class="text-2xl font-bold text-slate-800 capitalize">{langObj.label}</h2>
-          <p class="text-slate-500 text-sm">Explore {langObj.label} worksheets, games, and reading stories.</p>
-        </a>
-      ))}
+      {recentPosts.map((post) => {
+        const levelTag = post.tags?.find((tag: any) =>
+          ["A1", "A2", "B1", "B2"].includes(tag.name)
+        );
+        const isPb = post.type === "pb";
+        const href = isPb ? `/pb/${post.slug}` : `/gh/${post.slug}`;
+        const lang = post.language || (post.tags?.find((t: any) => ['english', 'french', 'german', 'spanish'].includes(t.name.toLowerCase()))?.name.toLowerCase() || 'english');
+
+        return (
+          <a
+            href={href}
+            data-astro-reload
+            class="group bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full"
+          >
+            <div class="aspect-video w-full shrink-0 bg-slate-50 loading-pulse flex items-center justify-center overflow-hidden relative border-b border-slate-100">
+              {post.feature_image ? (
+                <Image
+                  src={post.feature_image}
+                  alt={post.title}
+                  width={400}
+                  height={225}
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <div class="w-full h-full flex items-center justify-center text-emerald-200">
+                  <svg
+                    class="w-12 h-12"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
+
+            <div class="grow p-5 flex flex-col text-left">
+              <div class="flex items-center gap-2 mb-3">
+                {levelTag && (
+                  <span class="text-[10px] font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                    {(lang || "").substring(0, 2).toUpperCase()}-
+                    {levelTag.name}
+                  </span>
+                )}
+                <div class="flex items-center gap-2">
+                  {levelTag && (
+                    <div class="h-1 w-1 rounded-full bg-slate-200" />
+                  )}
+                  {(() => {
+                    const displayTag = post.tags?.find(
+                      (t: any) =>
+                        !["A1", "A2", "B1", "B2", lang].includes(t.name) &&
+                        !t.name.startsWith("#")
+                    );
+                    return displayTag ? (
+                      <span class="text-[10px] font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                        #{displayTag.name}
+                      </span>
+                    ) : (
+                      <span class="text-[10px] text-slate-400 font-medium tracking-wider uppercase">
+                        #{post.slug.substring(0, 4)}
+                      </span>
+                    );
+                  })()}
+                </div>
+              </div>
+              
+              <h2 class="font-extrabold text-blue-600 text-[1.1rem] leading-tight mb-2 group-hover:text-blue-800 transition-colors line-clamp-2">
+                {post.title}
+              </h2>
+
+              <p class="text-slate-500 text-xs leading-relaxed line-clamp-3 mb-0 grow">
+                {post.custom_excerpt || post.excerpt}
+              </p>
+
+              <div class="pt-4 mt-auto border-t border-slate-100 flex items-center justify-between">
+                <span class="text-[10px] font-extrabold tracking-widest text-blue-600 uppercase">
+                  {isPb ? "Start App" : "Start Worksheet"}
+                </span>
+                <div class="w-6 h-6 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm group-hover:shadow-md">
+                  <svg
+                    class="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M14 5l7 7m0 0l-7 7m7-7H3"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </a>
+        );
+      })}
     </div>
   </div>
 </Layout>
