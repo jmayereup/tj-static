@@ -27,28 +27,5 @@ const { currentLang, currentTag = 'all' } = Astro.props;
   })}
 </div>
 
-<script is:inline>
-  // Instant feedback for filter clicks
-  function initFilterFeedback() {
-    const links = document.querySelectorAll('.filter-link');
-    links.forEach(link => {
-      link.addEventListener('click', () => {
-        // Only run if it's not already active
-          if (!link.classList.contains('active-filter')) {
-            links.forEach(l => {
-              l.classList.remove('active-filter', 'bg-[#005522]', 'text-white', 'shadow-sm', 'border-[#005522]');
-              l.classList.add('bg-white', 'text-[#4a5568]', 'border-[#e2e8f0]');
-              l.style.opacity = '1';
-            });
-            link.classList.add('active-filter', 'bg-[#005522]', 'text-white', 'shadow-sm', 'border-[#005522]');
-            link.classList.remove('bg-white', 'text-[#4a5568]', 'border-[#e2e8f0]');
-            link.style.opacity = '0.7'; // Slight transparency to show it's "loading"
-          }
-      });
-    });
-  }
 
-  // Handle both initial load and view transitions
-  document.addEventListener('astro:page-load', initFilterFeedback);
-</script>
 

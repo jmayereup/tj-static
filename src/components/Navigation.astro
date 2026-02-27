@@ -26,21 +26,7 @@ const { currentLang = 'english', currentTag } = Astro.props;
       />
       <span class="text-white font-serif tracking-wide">Teacher Jake</span>
     </a>
-    <div class="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar space-evenly md:justify-end">
-      {languages.map(lang => (
-        <a 
-          href={`/${lang.code}`}
-          data-astro-reload
-          data-astro-prefetch="hover"
-          class={`nav-link whitespace-nowrap px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            currentLang === lang.code 
-              ? 'active-nav bg-white text-[#005522] shadow-sm' 
-              : 'hover:bg-[#00a67d] text-emerald-50'
-          }`}
-        >
-          {lang.label}
-        </a>
-      ))}
+    <div class="flex items-center gap-4">
     </div>
   </div>
   
@@ -49,38 +35,71 @@ const { currentLang = 'english', currentTag } = Astro.props;
       <div class="grow">
         <TagFilter currentLang={currentLang} currentTag={currentTag} />
       </div>
-      <div class="w-full md:w-64 pb-2 md:pb-0">
-        <Search />
+      <div class="flex items-center gap-3 pb-2 md:pb-0">
+        <div style="width: 340px">
+          <Search />
+        </div>
+
+        {/* Language Dropdown */}
+        <div class="relative group">
+          <details class="language-dropdown">
+            <summary class="flex items-center justify-center w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 transition-all cursor-pointer list-none" title="Change Language">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+            </summary>
+            <div class="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-[100] py-1">
+              {languages.map(lang => (
+                <a 
+                  href={`/${lang.code}`}
+                  data-astro-reload
+                  class={`flex items-center px-4 py-2.5 text-sm font-medium transition-colors ${
+                    currentLang === lang.code 
+                      ? 'bg-emerald-50 text-[#005522]' 
+                      : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <span class={`w-2 h-2 rounded-full mr-3 ${currentLang === lang.code ? 'bg-[#005522]' : 'bg-transparent'}`}></span>
+                  {lang.label}
+                </a>
+              ))}
+            </div>
+          </details>
+        </div>
       </div>
     </div>
   </div>
 </nav>
 
 <script is:inline>
-  // Instant feedback for nav clicks
-  function initNavFeedback() {
-    const links = document.querySelectorAll('.nav-link');
-    links.forEach(link => {
-      link.addEventListener('click', () => {
-        if (!link.classList.contains('active-nav')) {
-          links.forEach(l => {
-            l.classList.remove('active-nav', 'bg-white', 'text-[#005522]', 'shadow-sm');
-            l.classList.add('hover:bg-[#00a67d]', 'text-emerald-50');
-            l.style.opacity = '1';
-          });
-          link.classList.add('active-nav', 'bg-white', 'text-[#005522]', 'shadow-sm');
-          link.classList.remove('hover:bg-[#00a67d]', 'text-emerald-50');
-          link.style.opacity = '0.7';
-        }
-      });
-    });
-  }
+  // Close details when clicking outside
+  document.addEventListener('click', (event) => {
+    const details = document.querySelector('.language-dropdown');
+    if (details && !details.contains(event.target)) {
+      details.removeAttribute('open');
+    }
+  });
 
-  document.addEventListener('astro:page-load', initNavFeedback);
+  // Handle Astro View Transitions
+  document.addEventListener('astro:page-load', () => {
+    const details = document.querySelector('.language-dropdown');
+    if (details) {
+      details.removeAttribute('open');
+    }
+  });
 </script>
-
 
 <style>
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Remove default details arrow */
+  .language-dropdown summary::-webkit-details-marker {
+    display: none;
+  }
+  .language-dropdown summary {
+    list-style: none;
+  }
 </style>
