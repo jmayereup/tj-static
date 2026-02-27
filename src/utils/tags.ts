@@ -13,7 +13,8 @@ export const LANGUAGES = [
   { code: 'english', label: 'English' },
   { code: 'french', label: 'French' },
   { code: 'german', label: 'German' },
-  { code: 'spanish', label: 'Spanish' }
+  { code: 'spanish', label: 'Spanish' },
+  { code: 'thai', label: 'Thai' }
 ];
 
 export const getLevelFromTags = (tags: any[]) => {

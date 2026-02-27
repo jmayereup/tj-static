@@ -104,7 +104,7 @@ const description = "Welcome to Teacher Jake. Explore our collection of interact
         );
         const isPb = post.type === "pb";
         const href = isPb ? `/pb/${post.slug}` : `/gh/${post.slug}`;
-        const lang = post.language || (post.tags?.find((t: any) => ['english', 'french', 'german', 'spanish'].includes(t.name.toLowerCase()))?.name.toLowerCase() || 'english');
+        const lang = post.language || (post.tags?.find((t: any) => ['english', 'french', 'german', 'spanish', 'thai'].includes(t.name.toLowerCase()))?.name.toLowerCase() || 'english');
 
         return (
           <a
