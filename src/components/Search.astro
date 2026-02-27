@@ -12,7 +12,7 @@
         element: "#search", 
         showSubResults: true,
         translations: {
-          placeholder: "Search worksheets..."
+          placeholder: "Search..."
         }
       });
     }
@@ -29,7 +29,7 @@
             element: "#search", 
             showSubResults: true,
             translations: {
-                placeholder: "Search worksheets..."
+                placeholder: "Search..."
             }
         });
     }
@@ -38,71 +38,35 @@
 
 <style is:global>
   /* Customize Pagefind UI to match project theme */
-  :root {
-    --pagefind-ui-primary: lightgrey;
+  .pagefind-ui {
+    --pagefind-ui-primary: darkgreen;
     --pagefind-ui-text: black;
-    --pagefind-ui-background: #ffffff;
+    --pagefind-ui-background: white;
     --pagefind-ui-border: #e2e8f0;
     --pagefind-ui-tag: #f1f5f9;
     --pagefind-ui-border-radius: 12px;
     --pagefind-ui-font: inherit;
+    --pagefind-ui-button: #005522;
+    --pagefind-ui-scale: .65;
   }
-
-  .pagefind-ui-container {
-    width: 100%;
-    position: relative; /* Base for absolute drawer */
-  }
-
-  .pagefind-ui .pagefind-ui__search-input {
-    font-weight: 500 !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    color: white !important;
-    box-shadow: none !important;
-    height: 36px !important;
-  }
-
-  .pagefind-ui .pagefind-ui__search-input::placeholder {
-    color: rgba(255, 255, 255, 0.6) !important;
-  }
-
-  .pagefind-ui .pagefind-ui__search-input:focus {
-    border-color: var(--pagefind-ui-primary) !important;
-    outline: none !important;
-    ring: 2px solid var(--pagefind-ui-primary) !important;
-  }
-  
+ 
   /* Make the search results an overlay */
-  .pagefind-ui .pagefind-ui__drawer {
+  .pagefind-ui .pagefind-ui__drawer  {
       position: absolute !important;
       top: 100% !important;
       right: 0 !important;
       width: 400px !important;
       max-width: calc(100vw - 2rem) !important;
       background: white !important;
-      border: 1px solid var(--pagefind-ui-border) !important;
-      border-radius: 12px !important;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-      margin-top: 0.5rem !important;
-      padding: 1rem !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 16px !important;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+      margin-top: 0.75rem !important;
+      padding: 1.25rem !important;
       max-height: 70vh !important;
-      overflow-y: auto !important;
+      overflow-y: auto !important; */
       z-index: 1000 !important;
-  }
-
-  /* Compact the form */
-  .pagefind-ui .pagefind-ui__form {
-      padding-bottom: 0 !important;
-  }
-
-  .pagefind-ui .pagefind-ui__result-link {
-    color: #2563eb !important;
-    font-weight: 700 !important;
-    text-decoration: none !important;
-  }
-
-  .pagefind-ui .pagefind-ui__result-link:hover {
-    text-decoration: underline !important;
+      color: black  !important;
   }
 </style>
 

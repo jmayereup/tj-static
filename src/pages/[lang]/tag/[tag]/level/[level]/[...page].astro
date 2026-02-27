@@ -147,7 +147,7 @@ const filterLabel = CATEGORY_FILTERS.find((f: any) => f.id === tag)?.label || (t
       <p class="mt-2 opacity-80">Check back later for more content.</p>
     </div>
   ) : (
-    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-pagefind-body transition:name="content-grid">
+    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" transition:name="content-grid">
       {posts.map((post: any) => {
         const levelTag = post.tags?.find((tagObj: any) => ['A1', 'A2', 'B1', 'B2'].includes(tagObj.name));
         return (

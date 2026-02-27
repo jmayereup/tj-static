@@ -44,7 +44,8 @@ const currentLang = (worksheet.language || 'English').toLowerCase();
   image={ogImage}
 >
 
-  <article class="max-w-6xl mx-auto bg-white p-4 sm:p-6 sm:rounded-2xl sm:shadow-sm sm:border border-slate-100">
+  <article class="max-w-6xl mx-auto bg-white p-4 sm:p-6 sm:rounded-2xl sm:shadow-sm sm:border border-slate-100" data-pagefind-body>
+    {ogImage && <img src={ogImage} alt="" data-pagefind-meta="image[src]" class="hidden" />}
 
 
     <!-- Web Component Wrapper -->
