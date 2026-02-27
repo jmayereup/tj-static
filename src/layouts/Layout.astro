@@ -9,7 +9,7 @@ const {
   currentLang, 
   currentTag, 
   description = "Interactive language learning worksheets and tools for ESL students.",
-  image = "/tj-logo-book.png",
+  image = "/tj-logo-big-brighter.png",
   article = false
 } = Astro.props;
 
@@ -34,7 +34,7 @@ const optimizedImage = image ? await getImage({
 
 const socialImageURL = optimizedImage 
   ? new URL(optimizedImage.src, Astro.url)
-  : new URL("/tj-logo-book.png", Astro.url);
+  : new URL("/tj-logo-big-brighter.png", Astro.url);
 ---
 <!doctype html>
 <html lang={isoLang}>
@@ -80,6 +80,11 @@ const socialImageURL = optimizedImage
     <script type="text/partytown" src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
 	</head>
 	<body class="bg-white min-h-screen text-slate-800 font-sans flex flex-col">
+    <style is:global>
+      html {
+        scrollbar-gutter: stable;
+      }
+    </style>
     <noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>
     <Navigation currentLang={currentLang} currentTag={currentTag} />
     
