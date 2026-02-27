@@ -1,6 +1,8 @@
 ---
 import { Image } from 'astro:assets';
 import logoImage from '../assets/tj-logo-book.png';
+import TagFilter from './TagFilter.astro';
+import Search from './Search.astro';
 
 const languages = [
   { code: 'english', label: 'English' },
@@ -9,7 +11,7 @@ const languages = [
   { code: 'spanish', label: 'Spanish' }
 ];
 
-const { currentLang = 'english' } = Astro.props;
+const { currentLang = 'english', currentTag } = Astro.props;
 ---
 <nav class="bg-[#005522] text-white py-2 px-4 shadow-sm">
   <div class="container mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-4">
@@ -30,7 +32,7 @@ const { currentLang = 'english' } = Astro.props;
           href={`/${lang.code}`}
           data-astro-reload
           data-astro-prefetch="hover"
-          class={`nav-link whitespace-nowrap px-4 py-2 rounded-lg font-medium transition-colors ${
+          class={`nav-link whitespace-nowrap px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
             currentLang === lang.code 
               ? 'active-nav bg-white text-[#005522] shadow-sm' 
               : 'hover:bg-[#00a67d] text-emerald-50'
@@ -39,6 +41,17 @@ const { currentLang = 'english' } = Astro.props;
           {lang.label}
         </a>
       ))}
+    </div>
+  </div>
+  
+  <div class="bg-[#005522] relative z-50 text-white" transition:name="filter-bar">
+    <div class="w-full max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 py-1">
+      <div class="grow">
+        <TagFilter currentLang={currentLang} currentTag={currentTag} />
+      </div>
+      <div class="w-full md:w-64 pb-2 md:pb-0">
+        <Search />
+      </div>
     </div>
   </div>
 </nav>

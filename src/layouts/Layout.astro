@@ -1,7 +1,5 @@
 ---
 import Navigation from '../components/Navigation.astro';
-import TagFilter from '../components/TagFilter.astro';
-import Search from '../components/Search.astro';
 import { ClientRouter } from 'astro:transitions';
 import { getImage } from 'astro:assets';
 import '../styles/global.css';
@@ -83,21 +81,8 @@ const socialImageURL = optimizedImage
 	</head>
 	<body class="bg-white min-h-screen text-slate-800 font-sans flex flex-col">
     <noscript><img src="https://queue.simpleanalyticscdn.com/noscript.gif" alt="" referrerpolicy="no-referrer-when-downgrade" /></noscript>
-    <Navigation currentLang={currentLang} />
+    <Navigation currentLang={currentLang} currentTag={currentTag} />
     
-    {currentLang && (
-      <div class="bg-slate-100 border-b border-slate-100 shadow-sm relative z-50" transition:name="filter-bar">
-        <div class="w-full max-w-6xl mx-auto px-0 flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 pt-1 pb-2 md:py-1">
-          <div class="grow">
-            <TagFilter currentLang={currentLang} currentTag={currentTag} />
-          </div>
-          <div class="w-full md:w-64">
-            <Search />
-          </div>
-        </div>
-      </div>
-    )}
-
     <main class="container mx-auto p-0 sm:p-4 max-w-6xl grow">
 		  <slot />
     </main>
