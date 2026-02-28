@@ -44,6 +44,52 @@ const currentLang = (worksheet.language || 'English').toLowerCase();
   image={ogImage}
 >
 
+  <div id="webview-warning" class="hidden mb-6 mx-auto max-w-6xl">
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
+      <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <div class="grow text-center sm:text-left">
+        <h3 class="text-amber-900 font-bold text-lg mb-1">In-App Browser Warning</h3>
+        <p class="text-amber-800 text-sm leading-relaxed">
+          Some features (like Text-to-Speech) may not work correctly in this browser. For the best experience, please open this page in Chrome or your default browser.
+        </p>
+      </div>
+      <a 
+        id="browser-intent-link"
+        href="#"
+        class="whitespace-nowrap bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 text-center w-full sm:w-auto"
+      >
+        Open in Browser
+      </a>
+    </div>
+  </div>
+
+  <script is:inline>
+    (function() {
+      const ua = navigator.userAgent;
+      const isAndroid = /Android/i.test(ua);
+      const isWebView = /wv/i.test(ua) || (isAndroid && /Version\/[\d.]+/i.test(ua) && !/Chrome\/[\d.]+/i.test(ua));
+      
+      if (isAndroid && isWebView) {
+        const warning = document.getElementById('webview-warning');
+        if (warning) {
+          warning.classList.remove('hidden');
+          
+          const intentLink = document.getElementById('browser-intent-link');
+          if (intentLink) {
+            // Construct Android Intent link to open in external browser
+            const url = window.location.href;
+            const cleanUrl = url.replace(/^https?:\/\//, '');
+            intentLink.href = `intent://${cleanUrl}#Intent;scheme=https;action=android.intent.action.VIEW;end`;
+          }
+        }
+      }
+    })();
+  </script>
+
   <article class="max-w-6xl mx-auto bg-white p-4 sm:p-6 sm:rounded-2xl sm:shadow-sm sm:border border-slate-100" data-pagefind-body>
     {ogImage && <img src={ogImage} alt="" data-pagefind-meta="image[src]" class="hidden" />}
 
