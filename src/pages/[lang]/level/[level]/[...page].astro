@@ -1,42 +1,52 @@
 ---
 import Layout from "../../../../layouts/Layout.astro";
-import { Image } from "astro:assets";
-import { ghostClient } from "../../../../lib/ghost";
 import { getAllPosts } from "../../../../lib/ghost-utils";
 import { LANGUAGES, getLevelFromTags } from "../../../../utils/tags";
-import TagFilter from "../../../../components/TagFilter.astro";
 import LevelFilter from "../../../../components/LevelFilter.astro";
 import Pagination from "../../../../components/Pagination.astro";
 import WorksheetCard from "../../../../components/WorksheetCard.astro";
-import { downloadGhostAsset } from "../../../../utils/downloadGhostAsset";
+import { pb } from "../../../../lib/pocketbase";
+import { mapPbRecord } from "../../../../lib/pb-worksheet-mapper";
 
 export async function getStaticPaths({ paginate }: any) {
   const allPaths: any[] = [];
   const levels = ["a1", "a2", "b1", "b2"];
 
+  // Fetch all PocketBase worksheets once and normalize
+  let allPbWorksheets: any[] = [];
+  try {
+    const records = await pb.collection("worksheets").getFullList({ sort: "-created" });
+    allPbWorksheets = records.map(mapPbRecord);
+  } catch (e) {
+    console.warn("Could not fetch PocketBase worksheets for level pages", e);
+  }
+
   for (const langObj of LANGUAGES) {
     const lang = langObj.code;
-    let posts: any[] = [];
+    let ghostPosts: any[] = [];
     try {
-      posts = await getAllPosts({
-        filter: `tag:${lang}`,
-        include: ["tags"],
-      });
-      posts = await Promise.all(
-        posts.map(async (post: any) => {
-          let feature_image = post.feature_image;
-          return { ...post, feature_image };
-        })
-      );
+      ghostPosts = await getAllPosts({ filter: `tag:${lang}`, include: ["tags"] });
+      ghostPosts = ghostPosts.map((post: any) => ({ ...post, source: "ghost" }));
     } catch (e) {
       console.error(`Failed to fetch Ghost posts for ${lang}`, e);
     }
 
+    const langPb = allPbWorksheets.filter((ws) => ws.language === lang);
+
     for (const level of levels) {
-      const levelPosts = posts.filter(
+      const levelGhost = ghostPosts.filter(
         (post: any) => getLevelFromTags(post.tags) === level
       );
-      const paginated = paginate(levelPosts, {
+      const levelPb = langPb.filter(
+        (ws) => (ws.level || "All").toLowerCase() === level
+      );
+      const combined = [...levelGhost, ...levelPb].sort((a, b) => {
+        const da = new Date(a.published_at || a.created_at || 0).getTime();
+        const db = new Date(b.published_at || b.created_at || 0).getTime();
+        return db - da;
+      });
+
+      const paginated = paginate(combined, {
         params: { lang, level },
         pageSize: 12,
       });
@@ -47,11 +57,7 @@ export async function getStaticPaths({ paginate }: any) {
           props: {
             page: {
               data: [],
-              start: 0,
-              end: 0,
-              total: 0,
-              currentPage: 1,
-              lastPage: 1,
+              start: 0, end: 0, total: 0, currentPage: 1, lastPage: 1,
               url: { current: `/${lang}/level/${level}` },
             },
           },
@@ -79,31 +85,25 @@ const titleMap: Record<string, string> = {
 
 const displayLang = titleMap[lang as string] || lang;
 ---
-
 <Layout
-  title={`Teacher Jake Worksheets - ${displayLang} ${
-    level ? level.toString().toUpperCase() : ""
-  } (Page ${page.currentPage})`}
+  title={`Teacher Jake Worksheets - ${displayLang} ${level ? level.toString().toUpperCase() : ""} (Page ${page.currentPage})`}
   currentLang={lang}
   description={`Browse our collection of interactive ${displayLang} language learning materials, reading exercises, and quizzes.`}
 >
   <div class="px-4">
     <div class="mb-4 text-center pt-4">
-    <h1
-      class="text-4xl md:text-5xl font-extrabold mb-4 text-[#06422f] tracking-tight capitalize"
-    >
-      {displayLang} Worksheets
-    </h1>
-    <p class="text-lg text-[#4a5568] max-w-2xl mx-auto">
-      Browse our collection of interactive {displayLang} language learning materials,
-      reading exercises, and quizzes.
-    </p>
-  </div>
+      <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-[#06422f] tracking-tight capitalize">
+        {displayLang} Worksheets
+      </h1>
+      <p class="text-lg text-[#4a5568] max-w-2xl mx-auto">
+        Browse our collection of interactive {displayLang} language learning materials,
+        reading exercises, and quizzes.
+      </p>
+    </div>
 
-  <LevelFilter currentLang={lang as string} currentLevel={level as string} />
+    <LevelFilter currentLang={lang as string} currentLevel={level as string} />
 
-  {
-    posts.length === 0 ? (
+    {posts.length === 0 ? (
       <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
         <p class="text-lg font-medium">
           No {displayLang} {level?.toString().toUpperCase()} worksheets found.
@@ -119,9 +119,8 @@ const displayLang = titleMap[lang as string] || lang;
           <WorksheetCard post={post} lang={lang as string} />
         ))}
       </div>
-    )
-  }
+    )}
 
-  <Pagination page={page} />
+    <Pagination page={page} />
   </div>
 </Layout>

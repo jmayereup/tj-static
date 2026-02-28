@@ -90,28 +90,29 @@ if (isPb) {
   </div>
 
   <div class="grow p-5 flex flex-col">
-    <div class="flex items-center gap-2 mb-3">
+    <div class="flex flex-wrap items-center gap-1 mb-1 line-clamp-1">
       {levelTag && (
-        <span class="text-[10px] font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-          {displayLangPrefix}-{levelTag.name}
+        <span class="text-[10px] font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-1 py-0.5 rounded border border-emerald-100">
+          {levelTag.name}
         </span>
       )}
-      <div class="flex flex-wrap items-center gap-2">
+      <div class="flex items-center gap-2">
         {levelTag && (
-          <div class="h-1 w-1 rounded-full bg-slate-200" />
+          <div class="h-1 w-1 rounded-full bg-slate-400" />
         )}
         {(() => {
           const lowerLang = (lang || "").toLowerCase();
+          const pbAllowedTags = ["history", "science", "fable", "general", "video"];
           const displayTags = normalizedTags.filter(
             (t: any) =>
               !["a1", "a2", "b1", "b2", lowerLang].includes(t.cleanName) &&
-              (isPb || !t.isInternal)
+              (isPb ? pbAllowedTags.includes(t.cleanName) : !t.isInternal)
           );
           
           if (displayTags.length > 0) {
             return displayTags.map((tag: any) => (
-              <span class="text-[10px] font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-                #{tag.cleanName}
+              <span class="text-[10px] font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-1 py-0.5 rounded border border-emerald-100">
+                {tag.cleanName}
               </span>
             ));
           }

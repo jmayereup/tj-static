@@ -1,110 +1,63 @@
 ---
 import Layout from '../../../../layouts/Layout.astro';
-import { Image } from 'astro:assets';
-import { ghostClient } from '../../../../lib/ghost';
 import { getAllPosts } from '../../../../lib/ghost-utils';
 import { LANGUAGES, CATEGORY_FILTERS } from '../../../../utils/tags';
-import TagFilter from '../../../../components/TagFilter.astro';
 import LevelFilter from '../../../../components/LevelFilter.astro';
 import Pagination from '../../../../components/Pagination.astro';
 import WorksheetCard from '../../../../components/WorksheetCard.astro';
 import { pb } from '../../../../lib/pocketbase';
-import { downloadGhostAsset } from '../../../../utils/downloadGhostAsset';
-import { downloadAsset } from '../../../../utils/downloadAsset';
+import { mapPbRecord } from '../../../../lib/pb-worksheet-mapper';
 
 export async function getStaticPaths({ paginate }: any) {
   const allPaths: any[] = [];
 
-  // Fetch all Pocketbase worksheets once
-  let pbWorksheets: any[] = [];
+  // Fetch all PocketBase worksheets once and normalize
+  let allPbWorksheets: any[] = [];
   try {
     const records = await pb.collection('worksheets').getFullList({ sort: '-created' });
-    pbWorksheets = await Promise.all(records.map(async (record) => {
-      let content = record.content;
-      if (typeof content === 'string') {
-        try { content = JSON.parse(content); } catch(e) {}
-      }
-      
-      const title = record.title || content?.title || 'Untitled';
-      let description = record.seo || content?.readingText || '';
-      if (!record.seo && description.startsWith(title)) description = description.substring(title.length).trim();
-      description = description.substring(0, 120) + (description.length > 120 ? '...' : '');
-      
-      let imageUrl = record.image ? pb.files.getURL(record, record.image) : undefined;
-      if (imageUrl) {
-        imageUrl = await downloadAsset(imageUrl, record.id, record.image);
-      }
-      
-      if (!imageUrl && record.videoUrl) {
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-        const match = record.videoUrl?.match(regExp);
-        const ytId = (match && match[2].length === 11) ? match[2] : null;
-        if (ytId) imageUrl = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
-      }
-      
-      // Map to Ghost-like structure for the template
-      return { 
-        id: record.id,
-        slug: record.id, // For the link construction if needed, though we use different prefix
-        title, 
-        custom_excerpt: description, 
-        feature_image: imageUrl, 
-        language: (record.language || 'English').toLowerCase(), 
-        level: record.level || 'All',
-        created_at: record.created,
-        tags: [{ name: record.level || 'All', slug: (record.level || 'All').toLowerCase() }],
-        lessonType: record.lessonType,
-        source: 'pocketbase'
-      };
-    }));
+    allPbWorksheets = records.map(mapPbRecord);
   } catch (e) {
-    console.warn("Failed to fetch Pocketbase worksheets for tag pages", e);
+    console.warn("Failed to fetch PocketBase worksheets for tag pages", e);
   }
 
   for (const langObj of LANGUAGES) {
     const lang = langObj.code;
-    let posts: any[] = [];
+    let ghostPosts: any[] = [];
     try {
-      posts = await getAllPosts({
-          filter: `tag:${lang}`,
-          include: ['tags']
-      });
-      posts = posts.map((post: any) => ({ ...post, source: 'ghost' }));
+      ghostPosts = await getAllPosts({ filter: `tag:${lang}`, include: ['tags'] });
+      ghostPosts = ghostPosts.map((post: any) => ({ ...post, source: 'ghost' }));
     } catch (e) {
       console.error(`Failed to fetch Ghost posts for ${lang}`, e);
     }
-    
-    // For each category, filter posts locally
-    const filterCategories = CATEGORY_FILTERS.filter(f => f.id !== 'all');
+
+    const filterCategories = CATEGORY_FILTERS.filter((f: any) => f.id !== 'all');
     for (const category of filterCategories) {
-        // Find Ghost posts that have the exact tag slug
-        let filteredItems = posts.filter(post => 
-            post.tags?.some((t: any) => t.slug === category.id)
+      // Ghost: match by tag slug
+      let filteredItems = ghostPosts.filter((post: any) =>
+        post.tags?.some((t: any) => t.slug === category.id)
+      );
+
+      // PB: match by lessonType
+      if (['speaking', 'worksheet', 'book'].includes(category.id)) {
+        const typeMatch =
+          category.id === 'speaking' ? 'information-gap' :
+          category.id === 'book' ? 'focused-reading' : 'worksheet';
+        const matchingPb = allPbWorksheets.filter(
+          (ws) => ws.language === lang && ws.lessonType === typeMatch
         );
-
-        // Add Pocketbase worksheets if category is 'speaking', 'worksheet' or 'book'
-        if (['speaking', 'worksheet', 'book'].includes(category.id)) {
-          const typeMatch = category.id === 'speaking' ? 'information-gap' : 
-                          category.id === 'book' ? 'focused-reading' : 'worksheet';
-          const matchingPb = pbWorksheets.filter(ws => 
-            ws.language === lang && ws.lessonType === typeMatch
-          );
-          filteredItems = [...filteredItems, ...matchingPb];
-          
-          // Sort combined items by creation date
-          filteredItems.sort((a, b) => {
-            const dateA = new Date(a.created_at || a.published_at || 0).getTime();
-            const dateB = new Date(b.created_at || b.published_at || 0).getTime();
-            return dateB - dateA;
-          });
-        }
-
-        const paginated = paginate(filteredItems, {
-          params: { lang, tag: category.id },
-          pageSize: 12
+        filteredItems = [...filteredItems, ...matchingPb].sort((a, b) => {
+          const da = new Date(a.published_at || a.created_at || 0).getTime();
+          const db = new Date(b.published_at || b.created_at || 0).getTime();
+          return db - da;
         });
-        
-        allPaths.push(...paginated);
+      }
+
+      const paginated = paginate(filteredItems, {
+        params: { lang, tag: category.id },
+        pageSize: 12,
+      });
+
+      allPaths.push(...paginated);
     }
   }
 
@@ -120,34 +73,46 @@ const titleMap: Record<string, string> = {
   german: 'German',
   spanish: 'Spanish',
   english: 'English',
-  thai: 'Thai'
+  thai: 'Thai',
 };
 
 const displayLang = titleMap[lang as string] || lang;
-const filterLabel = CATEGORY_FILTERS.find(f => f.id === tag)?.label || (tag as string);
+const filterLabel = CATEGORY_FILTERS.find((f: any) => f.id === tag)?.label || (tag as string);
 ---
-<Layout title={`Teacher Jake ${filterLabel} - ${displayLang} (Page ${page.currentPage})`} currentLang={lang} currentTag={tag}>
+<Layout
+  title={`Teacher Jake ${filterLabel} - ${displayLang} (Page ${page.currentPage})`}
+  currentLang={lang}
+  currentTag={tag}
+>
   <div class="px-4">
     <div class="mb-4 text-center pt-2">
-    <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-emerald-950 tracking-tight capitalize">{displayLang} {filterLabel}</h1>
-    <p class="text-lg text-slate-600 max-w-2xl mx-auto">Browse our collection of interactive {displayLang} {(filterLabel as string).toLowerCase()} and language learning activities.</p>
-  </div>
-  
-  <LevelFilter currentLang={lang as string} currentTag={tag as string} currentLevel="all" />
-
-  {posts.length === 0 ? (
-    <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
-      <p class="text-lg font-medium">No {displayLang} {(filterLabel as string).toLowerCase()} found.</p>
-      <p class="mt-2 opacity-80">Make sure your Ghost posts have the exact tag "{tag}".</p>
+      <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-emerald-950 tracking-tight capitalize">
+        {displayLang} {filterLabel}
+      </h1>
+      <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+        Browse our collection of interactive {displayLang}{" "}
+        {(filterLabel as string).toLowerCase()} and language learning activities.
+      </p>
     </div>
-  ) : (
-    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" transition:name="content-grid">
-      {posts.map((post: any) => (
-        <WorksheetCard post={post} lang={lang as string} />
-      ))}
-    </div>
-  )}
 
-  <Pagination page={page} />
+    <LevelFilter currentLang={lang as string} currentTag={tag as string} currentLevel="all" />
+
+    {posts.length === 0 ? (
+      <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
+        <p class="text-lg font-medium">No {displayLang} {(filterLabel as string).toLowerCase()} found.</p>
+        <p class="mt-2 opacity-80">Make sure your Ghost posts have the tag "{displayLang}".</p>
+      </div>
+    ) : (
+      <div
+        class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        transition:name="content-grid"
+      >
+        {posts.map((post: any) => (
+          <WorksheetCard post={post} lang={lang as string} />
+        ))}
+      </div>
+    )}
+
+    <Pagination page={page} />
   </div>
 </Layout>
