@@ -4,6 +4,7 @@ import { getAllPosts } from "../lib/ghost-utils";
 import { pb } from "../lib/pocketbase";
 import { LANGUAGES } from "../utils/tags";
 import WorksheetCard from "../components/WorksheetCard.astro";
+import { mapPbRecord } from "../lib/pb-worksheet-mapper";
 
 let recentPosts: any[] = [];
 try {
@@ -12,55 +13,15 @@ try {
     .collection("worksheets")
     .getFullList({ sort: "-created" });
   
-  const pbWorksheets = records.map((record) => {
-    let content = record.content;
-    if (typeof content === "string") {
-      try {
-        content = JSON.parse(content);
-      } catch (e) {}
-    }
+  const pbWorksheets = records
+    .map(mapPbRecord)
+    .filter((post) => post.language === "english");
 
-    const title = record.title || content?.title || "Untitled";
-    let description = record.seo || content?.readingText || "";
-    if (!record.seo && description.startsWith(title))
-      description = description.substring(title.length).trim();
-    description =
-      description.substring(0, 120) + (description.length > 120 ? "..." : "");
-
-    let imageUrl = record.image
-      ? pb.files.getURL(record, record.image)
-      : undefined;
-
-    if (!imageUrl && record.videoUrl) {
-      const regExp =
-        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-      const match = record.videoUrl?.match(regExp);
-      const ytId = match && match[2].length === 11 ? match[2] : null;
-      if (ytId)
-        imageUrl = `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg`;
-    }
-
-    return {
-      type: "pb",
-      id: record.id,
-      title,
-      slug: record.id,
-      custom_excerpt: description,
-      feature_image: imageUrl,
-      tags: [
-        { name: record.level || "All" },
-        ...(record.tags || []).map((t: string) => ({ name: t })),
-        { name: (record.language || "english").toLowerCase() },
-      ],
-      published_at: record.created,
-      language: (record.language || "english").toLowerCase(),
-    };
-  });
-
-  // Fetch Ghost posts
+  // Fetch Ghost posts filtered by English tag
   let ghostPosts: any[] = [];
   try {
     ghostPosts = await getAllPosts({
+      filter: "tag:english",
       include: ["tags"],
     });
     ghostPosts = ghostPosts.map((post: any) => ({ ...post, type: "gh" }));
@@ -70,8 +31,8 @@ try {
 
   // Combine and sort
   recentPosts = [...ghostPosts, ...pbWorksheets].sort((a, b) => {
-    const dateA = new Date(a.published_at || a.created_at || 0).getTime();
-    const dateB = new Date(b.published_at || b.created_at || 0).getTime();
+    const dateA = new Date(a.published_at || a.created_at || a.created || 0).getTime();
+    const dateB = new Date(b.published_at || b.created_at || b.created || 0).getTime();
     return dateB - dateA;
   }).slice(0, 4);
 
