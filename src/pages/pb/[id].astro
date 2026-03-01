@@ -3,6 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import { pb } from '../../lib/pocketbase';
 import { downloadAsset } from '../../utils/downloadAsset';
 import { renderContentAsHtml } from '../../utils/serialization';
+import ShareButtons from '../../components/ShareButtons.astro';
 
 export async function getStaticPaths() {
   try {
@@ -95,6 +96,7 @@ const contentFallbackHtml = renderContentAsHtml(content);
   </script>
 
   <article class="max-w-6xl mx-auto bg-white p-4 sm:p-6 sm:rounded-2xl sm:shadow-sm sm:border border-slate-100" data-pagefind-body>
+    <ShareButtons title={worksheet.title} description={worksheet.seo || worksheet.description} />
     {ogImage && <img src={ogImage} alt="" data-pagefind-meta="image[src]" class="hidden" width="1200" height="630" />}
 
 

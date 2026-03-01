@@ -6,6 +6,7 @@ import { downloadGhostAsset, downloadGhostHtmlAssets } from '../../utils/downloa
 import { transformComponentsToScripts } from '../../utils/transformComponentsToScripts';
 import { transformYouTubeEmbeds } from '../../utils/transformYouTubeEmbeds';
 import { LANGUAGES } from '../../utils/tags';
+import ShareButtons from '../../components/ShareButtons.astro';
 
 
 export async function getStaticPaths() {
@@ -105,6 +106,7 @@ const finalScripts = Array.from(scriptsToLoad);
   </Fragment>
 
   <article class={`prose lg:prose-xl max-w-[720px] mx-auto ${tagClassList}`} data-pagefind-body>
+    <ShareButtons title={post.title} description={post.excerpt || post.custom_excerpt} />
     {post.feature_image && (
         <div class="w-full max-h-[400px] bg-slate-50 sm:rounded-2xl sm:shadow-md mx-auto my-4 sm:my-8 overflow-hidden flex justify-center">
           <Image 
