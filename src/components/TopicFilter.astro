@@ -10,46 +10,41 @@ const { currentLang, currentTopic = 'all' } = Astro.props;
 
 // Add 'All' option for topics
 const TOPICS = [
-  { label: 'All Topics', id: 'all' },
+  { label: 'All', id: 'all' },
   ...WORKSHEET_TOPICS
 ];
 ---
-<div class="w-full">
-  <div class="flex flex-row flex-wrap items-center justify-center md:justify-center gap-2 md:gap-3 py-2 px-1 mx-auto">
-    <span class="text-[10px] font-bold text-slate-400 mr-1 uppercase tracking-widest shrink-0">Topic</span>
-  {TOPICS.map(topic => {
-    const isActive = currentTopic === topic.id;
-    let href = '';
-    
-    if (topic.id === 'all') {
-      href = `/${currentLang}/tag/worksheet`;
-    } else {
-      href = `/${currentLang}/tag/${topic.id}`;
-    }
+<div class="w-full max-w-5xl mx-auto px-4 mb-1">
+  <div class="flex flex-row items-start gap-2 md:gap-4">
+    <div class="w-12 shrink-0 pt-2.5">
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Topic</span>
+    </div>
+    <div class="flex flex-row flex-wrap items-center justify-center gap-2 md:gap-3 py-1 grow">
+      {TOPICS.map(topic => {
+        const isActive = currentTopic === topic.id;
+        let href = '';
+        
+        if (topic.id === 'all') {
+          href = `/${currentLang}/tag/worksheet`;
+        } else {
+          href = `/${currentLang}/tag/${topic.id}`;
+        }
 
-    return (
-      <a 
-        href={href}
-        data-astro-prefetch="hover"
-        class={`topic-link whitespace-nowrap px-2 py-1 rounded-full text-xs font-bold transition-all uppercase tracking-wide ${
-          isActive 
-            ? 'bg-emerald-600 text-white shadow-sm border border-emerald-600' 
-            : 'bg-white text-slate-500 border border-slate-200 hover:border-emerald-300 hover:text-emerald-600'
-        }`}
-      >
-        {topic.label}
-      </a>
-    );
-  })}
+        return (
+          <a 
+            href={href}
+            data-astro-prefetch="hover"
+            class={`topic-link whitespace-nowrap px-2 py-1 rounded-full text-xs font-bold transition-all uppercase tracking-wide ${
+              isActive 
+                ? 'bg-emerald-600 text-white shadow-sm border border-emerald-600' 
+                : 'bg-white text-slate-500 border border-slate-200 hover:border-emerald-300 hover:text-emerald-600'
+            }`}
+          >
+            {topic.label}
+          </a>
+        );
+      })}
+    </div>
   </div>
 </div>
 
-<!-- <style>
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-</style> -->

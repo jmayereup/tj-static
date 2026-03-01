@@ -8,57 +8,52 @@ export interface Props {
 const { currentLang, currentTag = 'all', currentLevel = 'all' } = Astro.props;
 
 const LEVELS = [
-  { label: 'All Levels', id: 'all' },
+  { label: 'All', id: 'all' },
   { label: 'A1', id: 'a1' },
   { label: 'A2', id: 'a2' },
   { label: 'B1', id: 'b1' },
   { label: 'B2', id: 'b2' },
 ];
 ---
-<div class="w-full overflow-x-auto scrollbar-hide mb-4">
-  <div class="flex items-center justify-start md:justify-center gap-2 md:gap-3 py-2 px-1 min-w-max mx-auto">
-    <span class="text-[10px] font-bold text-slate-400 mr-1 uppercase tracking-widest shrink-0">Level</span>
-  {LEVELS.map(level => {
-    const isActive = currentLevel === level.id;
-    let href = '';
-    
-    if (currentTag === 'all') {
-      if (level.id === 'all') {
-        href = `/${currentLang}`;
-      } else {
-        href = `/${currentLang}/level/${level.id}`;
-      }
-    } else {
-      if (level.id === 'all') {
-        href = `/${currentLang}/tag/${currentTag}`;
-      } else {
-        href = `/${currentLang}/tag/${currentTag}/level/${level.id}`;
-      }
-    }
+<div class="w-full max-w-5xl mx-auto px-4 mb-4">
+  <div class="flex flex-row items-start gap-2 md:gap-4">
+    <div class="w-12 shrink-0 pt-2.5">
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Level</span>
+    </div>
+    <div class="flex flex-row flex-wrap items-center justify-center gap-2 md:gap-3 py-1 grow">
+      {LEVELS.map(level => {
+        const isActive = currentLevel === level.id;
+        let href = '';
+        
+        if (currentTag === 'all') {
+          if (level.id === 'all') {
+            href = `/${currentLang}`;
+          } else {
+            href = `/${currentLang}/level/${level.id}`;
+          }
+        } else {
+          if (level.id === 'all') {
+            href = `/${currentLang}/tag/${currentTag}`;
+          } else {
+            href = `/${currentLang}/tag/${currentTag}/level/${level.id}`;
+          }
+        }
 
-    return (
-      <a 
-        href={href}
-        data-astro-prefetch="hover"
-        class={`level-link whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold transition-all uppercase tracking-wide ${
-          isActive 
-            ? 'bg-blue-600 text-white shadow-sm border border-blue-600' 
-            : 'bg-white text-slate-500 border border-slate-200 hover:border-blue-300 hover:text-blue-600'
-        }`}
-      >
-        {level.label}
-      </a>
-    );
-  })}
+        return (
+          <a 
+            href={href}
+            data-astro-prefetch="hover"
+            class={`level-link whitespace-nowrap px-3 py-1 rounded-full text-xs font-bold transition-all uppercase tracking-wide ${
+              isActive 
+                ? 'bg-blue-600 text-white shadow-sm border border-blue-600' 
+                : 'bg-white text-slate-500 border border-slate-200 hover:border-blue-300 hover:text-blue-600'
+            }`}
+          >
+            {level.label}
+          </a>
+        );
+      })}
+    </div>
   </div>
 </div>
 
-<style>
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-</style>

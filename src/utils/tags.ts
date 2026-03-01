@@ -15,7 +15,6 @@ export const WORKSHEET_TOPICS = [
   { label: 'History', id: 'history' },
   { label: 'Fables', id: 'fable' },
   { label: 'Video', id: 'video' },
-  { label: 'M1-2', id: 'm1-2' },
 ];
 
 export const LANGUAGES = [
