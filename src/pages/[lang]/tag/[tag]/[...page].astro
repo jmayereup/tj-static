@@ -120,9 +120,10 @@ const isWorksheetRelated = tag === 'worksheet' || WORKSHEET_TOPICS.some(t => t.i
         {(filterLabel as string).toLowerCase()} and language learning activities.
       </p>
     </div>
-
-    {isWorksheetRelated && <TopicFilter currentLang={lang as string} currentTopic={tag as string} />}
-    <LevelFilter currentLang={lang as string} currentTag={tag as string} currentLevel="all" />
+<div class="mb-4">
+  <LevelFilter currentLang={lang as string} currentTag={tag as string} currentLevel="all" />
+  {isWorksheetRelated && <TopicFilter currentLang={lang as string} currentTopic={tag as string} />}
+</div>
 
     {posts.length === 0 ? (
       <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
