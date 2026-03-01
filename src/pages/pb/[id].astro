@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { pb } from '../../lib/pocketbase';
 import { downloadAsset } from '../../utils/downloadAsset';
+import { renderContentAsHtml } from '../../utils/serialization';
 
 export async function getStaticPaths() {
   try {
@@ -35,6 +36,8 @@ const parsedLesson = {
 };
 const ogImage = worksheet.image ? pb.files.getURL(worksheet, worksheet.image) : undefined;
 const currentLang = (worksheet.language || 'English').toLowerCase();
+
+const contentFallbackHtml = renderContentAsHtml(content);
 ---
 <Layout 
   title={`${worksheet?.title || 'App'} | Teacher Jake App`} 
@@ -98,6 +101,17 @@ const currentLang = (worksheet.language || 'English').toLowerCase();
     <tj-pocketbase-worksheet>
       <script type="application/json" set:html={JSON.stringify(parsedLesson)} />
     </tj-pocketbase-worksheet>
+
+    <!-- Fallback Content (Server Rendered) -->
+    <div class="tj-fallback p-4 sm:p-8">
+      <h1 class="text-3xl font-extrabold text-blue-600 mb-4">{worksheet.title}</h1>
+      {worksheet.seo && <p class="text-slate-600 italic mb-6 text-lg">{worksheet.seo}</p>}
+      {!worksheet.seo && worksheet.description && <p class="text-slate-600 italic mb-6 text-lg">{worksheet.description}</p>}
+      
+      <div class="fallback-json-content prose-slate prose-lg max-w-none">
+        <Fragment set:html={contentFallbackHtml} />
+      </div>
+    </div>
   </article>
 </Layout>
 <style is:global>
@@ -106,6 +120,11 @@ const currentLang = (worksheet.language || 'English').toLowerCase();
     width: 100%;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  /* Hide fallback once component is defined */
+  tj-pocketbase-worksheet:defined + .tj-fallback {
+    display: none;
   }
 </style>
 
