@@ -42,9 +42,10 @@ const contentFallbackHtml = renderContentAsHtml(content);
 <Layout 
   title={`${worksheet?.title || 'App'} | Teacher Jake App`} 
   currentLang={currentLang} 
-  currentTag="worksheets"
+  currentTag="worksheet"
   description={worksheet?.seo || worksheet?.description}
   image={ogImage}
+  article={true}
 >
 
   <div id="webview-warning" class="hidden mb-6 mx-auto max-w-6xl">
