@@ -5,6 +5,8 @@ import { getAllPosts } from '../../lib/ghost-utils';
 import { downloadGhostAsset, downloadGhostHtmlAssets } from '../../utils/downloadGhostAsset';
 import { transformComponentsToScripts } from '../../utils/transformComponentsToScripts';
 import { transformYouTubeEmbeds } from '../../utils/transformYouTubeEmbeds';
+import { LANGUAGES } from '../../utils/tags';
+
 
 export async function getStaticPaths() {
   const posts = await getAllPosts({ include: ['tags'] });
@@ -34,7 +36,8 @@ const tagClassList = tagSlugs.map((slug: string) => `tag-${slug}`).join(' ');
 
 // Find language for highlighting navigation
 let currentLang = 'english';
-const supportedLangs = ['english', 'french', 'german', 'spanish'];
+const supportedLangs = LANGUAGES.map(l => l.code);
+
 for (const lang of supportedLangs) {
   if (tagSlugs.includes(lang)) {
     currentLang = lang;

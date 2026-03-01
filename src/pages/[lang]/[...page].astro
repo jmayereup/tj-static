@@ -80,9 +80,6 @@ const displayLang = titleMap[lang as string] || lang;
     {posts.length === 0 ? (
       <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
         <p class="text-lg font-medium">No {displayLang} worksheets found.</p>
-        <p class="mt-2 opacity-80">
-          Make sure your Ghost posts have the tag "{displayLang}".
-        </p>
       </div>
     ) : (
       <div

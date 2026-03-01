@@ -51,7 +51,7 @@ export async function downloadGhostAsset(url: string, id: string): Promise<strin
     
     const buffer = await response.arrayBuffer();
     fs.writeFileSync(destPattern, Buffer.from(buffer));
-    console.log(`Downloaded Ghost asset: ${publicUrl}`);
+
     return publicUrl;
   } catch (err) {
     console.error(`Failed to download Ghost asset ${url}:`, err);

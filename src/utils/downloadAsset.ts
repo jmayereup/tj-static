@@ -24,7 +24,7 @@ export async function downloadAsset(url: string, id: string, filename: string): 
     
     const buffer = await response.arrayBuffer();
     fs.writeFileSync(destPattern, Buffer.from(buffer));
-    console.log(`Downloaded asset: ${publicUrl}`);
+
     return publicUrl;
   } catch (err) {
     console.error(`Failed to download asset ${url}:`, err);
