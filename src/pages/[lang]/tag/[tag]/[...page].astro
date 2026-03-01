@@ -1,8 +1,9 @@
 ---
 import Layout from '../../../../layouts/Layout.astro';
 import { getAllPosts } from '../../../../lib/ghost-utils';
-import { LANGUAGES, CATEGORY_FILTERS } from '../../../../utils/tags';
+import { LANGUAGES, CATEGORY_FILTERS, WORKSHEET_TOPICS } from '../../../../utils/tags';
 import LevelFilter from '../../../../components/LevelFilter.astro';
+import TopicFilter from '../../../../components/TopicFilter.astro';
 import Pagination from '../../../../components/Pagination.astro';
 import WorksheetCard from '../../../../components/WorksheetCard.astro';
 import { pb } from '../../../../lib/pocketbase';
@@ -31,26 +32,47 @@ export async function getStaticPaths({ paginate }: any) {
     }
 
     const filterCategories = CATEGORY_FILTERS.filter((f: any) => f.id !== 'all');
-    for (const category of filterCategories) {
-      // Ghost: match by tag slug
+    const worksheetTopics = WORKSHEET_TOPICS;
+
+    // Combine standard categories and worksheet topics for routing
+    const allTags = [
+      ...filterCategories,
+      ...worksheetTopics
+    ];
+
+    for (const category of allTags) {
+      // 1. Ghost Content (match by tag slug)
       let filteredItems = ghostPosts.filter((post: any) =>
         post.tags?.some((t: any) => t.slug === category.id)
       );
 
-      // PB: match by lessonType
-      if (['speaking', 'worksheet', 'book'].includes(category.id)) {
+      // 2. PocketBase Content
+      // Check if this is a main lessonType category
+      const isLessonType = ['speaking', 'worksheet', 'book'].includes(category.id);
+      
+      if (isLessonType) {
         const typeMatch =
           category.id === 'speaking' ? 'information-gap' :
           category.id === 'book' ? 'focused-reading' : 'worksheet';
+        
         const matchingPb = allPbWorksheets.filter(
           (ws) => ws.language === lang && ws.lessonType === typeMatch
         );
-        filteredItems = [...filteredItems, ...matchingPb].sort((a, b) => {
-          const da = new Date(a.published_at || a.created_at || 0).getTime();
-          const db = new Date(b.published_at || b.created_at || 0).getTime();
-          return db - da;
-        });
+        filteredItems = [...filteredItems, ...matchingPb];
+      } else {
+        // Assume it's a content topic tag (science, history, etc.)
+        const matchingPb = allPbWorksheets.filter(
+          (ws) => ws.language === lang && ws.tags?.some((t: any) => t.name.toLowerCase() === category.id.toLowerCase())
+        );
+        filteredItems = [...filteredItems, ...matchingPb];
       }
+
+      // Sort combined results
+      filteredItems.sort((a, b) => {
+        const da = new Date(a.published_at || a.created_at || 0).getTime();
+        const db = new Date(b.published_at || b.created_at || 0).getTime();
+        return db - da;
+      });
 
       const paginated = paginate(filteredItems, {
         params: { lang, tag: category.id },
@@ -77,7 +99,11 @@ const titleMap: Record<string, string> = {
 };
 
 const displayLang = titleMap[lang as string] || lang;
-const filterLabel = CATEGORY_FILTERS.find((f: any) => f.id === tag)?.label || (tag as string);
+const filterLabel = CATEGORY_FILTERS.find((f: any) => f.id === tag)?.label || 
+                   WORKSHEET_TOPICS.find((f: any) => f.id === tag)?.label || 
+                   (tag as string);
+
+const isWorksheetRelated = tag === 'worksheet' || WORKSHEET_TOPICS.some(t => t.id === tag);
 ---
 <Layout
   title={`Teacher Jake ${filterLabel} - ${displayLang} (Page ${page.currentPage})`}
@@ -95,6 +121,7 @@ const filterLabel = CATEGORY_FILTERS.find((f: any) => f.id === tag)?.label || (t
       </p>
     </div>
 
+    {isWorksheetRelated && <TopicFilter currentLang={lang as string} currentTopic={tag as string} />}
     <LevelFilter currentLang={lang as string} currentTag={tag as string} currentLevel="all" />
 
     {posts.length === 0 ? (

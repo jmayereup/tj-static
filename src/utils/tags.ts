@@ -9,6 +9,15 @@ export const CATEGORY_FILTERS = [
   { label: 'Pronunciation', id: 'pronunciation' },
 ];
 
+export const WORKSHEET_TOPICS = [
+  { label: 'General', id: 'general' },
+  { label: 'Science', id: 'science' },
+  { label: 'History', id: 'history' },
+  { label: 'Fables', id: 'fable' },
+  { label: 'Video', id: 'video' },
+  { label: 'M1-2', id: 'm1-2' },
+];
+
 export const LANGUAGES = [
   { code: 'english', label: 'English' },
   { code: 'french', label: 'French' },
