@@ -36,10 +36,12 @@ export async function getStaticPaths({ paginate }: any) {
     const allTags = [...filterCategories, ...worksheetTopics];
 
     for (const category of allTags) {
-      // Ghost: match by tag slug
-      let categoryGhost = ghostPosts.filter((post: any) =>
-        post.tags?.some((t: any) => t.slug === category.id)
-      );
+      let categoryGhost = ghostPosts.filter((post: any) => {
+        if (category.id === 'bilingual') {
+          return post.tags?.some((t: any) => t.slug === 'lbl-reader' || t.slug === 'blb');
+        }
+        return post.tags?.some((t: any) => t.slug === category.id);
+      });
 
       // PB: match by lessonType or Tag
       let categoryPb: any[] = [];

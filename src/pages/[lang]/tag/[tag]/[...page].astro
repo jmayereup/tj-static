@@ -40,9 +40,12 @@ export async function getStaticPaths({ paginate }: any) {
 
     for (const category of allTags) {
       // 1. Ghost Content (match by tag slug)
-      let filteredItems = ghostPosts.filter((post: any) =>
-        post.tags?.some((t: any) => t.slug === category.id)
-      );
+      let filteredItems = ghostPosts.filter((post: any) => {
+        if (category.id === 'bilingual') {
+          return post.tags?.some((t: any) => t.slug === 'lbl-reader' || t.slug === 'blb');
+        }
+        return post.tags?.some((t: any) => t.slug === category.id);
+      });
 
       // 2. PocketBase Content
       // Check if this is a main lessonType category
