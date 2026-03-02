@@ -5,20 +5,63 @@ import { downloadAsset } from '../../utils/downloadAsset';
 import { renderContentAsHtml } from '../../utils/serialization';
 import ShareButtons from '../../components/ShareButtons.astro';
 
+import Recommendations from '../../components/Recommendations.astro';
+import { getAllPosts } from '../../lib/ghost-utils';
+import { mapPbRecord } from '../../lib/pb-worksheet-mapper';
+
 export async function getStaticPaths() {
   try {
+    const ghostPosts = await getAllPosts({ include: ['tags'] });
+    const normalizedGhost = ghostPosts.map(p => ({ ...p, type: 'gh', source: 'ghost' }));
+
     const worksheets = await pb.collection('worksheets').getFullList();
-    return worksheets.map(worksheet => ({
-      params: { id: worksheet.id },
-      props: { worksheet },
-    }));
+    const normalizedPb = worksheets.map(mapPbRecord);
+    
+    const allNormalized = [...normalizedGhost, ...normalizedPb];
+
+    return worksheets.map(worksheet => {
+      const lang = (worksheet.language || 'english').toLowerCase();
+      const category = worksheet.lessonType?.toLowerCase();
+
+      const recommendations = allNormalized
+        .filter(p => {
+          if (p.id === worksheet.id) return false;
+          
+          const pTags = p.tags?.map((t: any) => t.slug || t.name?.toLowerCase()) || [];
+          const sameLang = pTags.includes(lang) || p.language === lang;
+          
+          let sameCategory = false;
+          if (category) {
+            if (category === 'bilingual' || category === 'lbl-reader' || category === 'blb') {
+               sameCategory = pTags.some(t => ['bilingual', 'lbl-reader', 'blb'].includes(t));
+            } else {
+               const normalizedCategory = category === 'information-gap' ? 'speaking' : 
+                                         category === 'focused-reading' ? 'book' : category;
+               sameCategory = pTags.includes(normalizedCategory) || p.lessonType === category;
+            }
+          }
+          
+          return sameLang && sameCategory;
+        })
+        .sort((a, b) => {
+          const da = new Date(a.published_at || a.created_at || 0).getTime();
+          const db = new Date(b.published_at || b.created_at || 0).getTime();
+          return db - da;
+        })
+        .slice(0, 3);
+
+      return {
+        params: { id: worksheet.id },
+        props: { worksheet, recommendations },
+      };
+    });
   } catch (error) {
     console.warn("Failed to fetch from Pocketbase. Make sure your Pocketbase server is running.");
     return [];
   }
 }
 
-const { worksheet } = Astro.props as { worksheet: any };
+const { worksheet, recommendations = [] } = Astro.props as { worksheet: any; recommendations: any[] };
 
 let content = typeof worksheet.content === 'string' ? JSON.parse(worksheet.content || '{}') : (worksheet.content || {});
 
@@ -115,6 +158,8 @@ const contentFallbackHtml = renderContentAsHtml(content);
         <Fragment set:html={contentFallbackHtml} />
       </div>
     </div>
+
+    {recommendations.length > 0 && <Recommendations posts={recommendations} lang={currentLang} />}
   </article>
 </Layout>
 <style is:global>

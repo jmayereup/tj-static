@@ -7,17 +7,69 @@ import { transformComponentsToScripts } from '../../utils/transformComponentsToS
 import { transformYouTubeEmbeds } from '../../utils/transformYouTubeEmbeds';
 import { LANGUAGES } from '../../utils/tags';
 import ShareButtons from '../../components/ShareButtons.astro';
+import Recommendations from '../../components/Recommendations.astro';
 
+
+import { pb } from '../../lib/pocketbase';
+import { mapPbRecord } from '../../lib/pb-worksheet-mapper';
 
 export async function getStaticPaths() {
-  const posts = await getAllPosts({ include: ['tags'] });
-  return posts.map(post => ({
-    params: { slug: post.slug },
-    props: { post },
-  }));
+  const ghostPosts = await getAllPosts({ include: ['tags'] });
+  
+  // Fetch and normalize PB posts once for cross-source recommendations
+  let allPbWorksheets: any[] = [];
+  try {
+    const records = await pb.collection('worksheets').getFullList({ sort: '-created' });
+    allPbWorksheets = records.map(mapPbRecord);
+  } catch (e) {
+    console.warn("Failed to fetch PB worksheets for Ghost recommendations", e);
+  }
+
+  const normalizedGhost = ghostPosts.map(p => ({ ...p, type: 'gh', source: 'ghost' }));
+  const allNormalized = [...normalizedGhost, ...allPbWorksheets];
+
+  return normalizedGhost.map(post => {
+    const tagSlugs = post.tags?.map((t: any) => t.slug) || [];
+    const lang = tagSlugs.find((s: any) => ['english', 'french', 'german', 'spanish', 'thai'].includes(s)) || 'english';
+    
+    // Primary category tag (excluding language and levels)
+    const categoryTag = tagSlugs.find((s: any) => 
+      ['bilingual', 'lbl-reader', 'blb', 'book', 'worksheet', 'grammar-game', 'speaking', 'listening', 'pronunciation'].includes(s)
+    );
+
+    const recommendations = allNormalized
+      .filter(p => {
+        if (p.id === post.id || p.slug === post.slug) return false;
+        
+        const pTags = p.tags?.map((t: any) => t.slug || t.name?.toLowerCase()) || [];
+        const sameLang = pTags.includes(lang) || p.language === lang;
+        
+        let sameCategory = false;
+        if (categoryTag) {
+          if (categoryTag === 'bilingual' || categoryTag === 'lbl-reader' || categoryTag === 'blb') {
+             sameCategory = pTags.some(t => ['bilingual', 'lbl-reader', 'blb'].includes(t));
+          } else {
+             sameCategory = pTags.includes(categoryTag) || p.lessonType === categoryTag;
+          }
+        }
+        
+        return sameLang && sameCategory;
+      })
+      .sort((a, b) => {
+        const da = new Date(a.published_at || a.created_at || 0).getTime();
+        const db = new Date(b.published_at || b.created_at || 0).getTime();
+        return db - da;
+      })
+      .slice(0, 3);
+
+    return {
+      params: { slug: post.slug },
+      props: { post, recommendations },
+    };
+  });
 }
 
-const { post: initialPost } = Astro.props;
+const { post: initialPost, recommendations = [] } = Astro.props;
 const ogImage = initialPost.feature_image; // Original URL for OG
 const post = { ...initialPost };
 
@@ -121,6 +173,8 @@ const finalScripts = Array.from(scriptsToLoad);
     )}
     
     <div class="worksheet-content" set:html={post.html} />
+
+    {recommendations.length > 0 && <Recommendations posts={recommendations} lang={currentLang} />}
   </article>
 </Layout>
 
