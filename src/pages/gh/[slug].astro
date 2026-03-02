@@ -1,15 +1,14 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { Image } from 'astro:assets';
+import { Image, getImage } from 'astro:assets';
 import { getAllPosts } from '../../lib/ghost-utils';
-import { downloadGhostAsset, downloadGhostHtmlAssets } from '../../utils/downloadGhostAsset';
+import { resolveLocalizedImage } from '../../utils/assetResolver';
+import { transformGhostHtml } from '../../utils/contentTransformer';
 import { transformComponentsToScripts } from '../../utils/transformComponentsToScripts';
 import { transformYouTubeEmbeds } from '../../utils/transformYouTubeEmbeds';
 import { LANGUAGES } from '../../utils/tags';
 import ShareButtons from '../../components/ShareButtons.astro';
 import Recommendations from '../../components/Recommendations.astro';
-
-
 import { pb } from '../../lib/pocketbase';
 import { mapPbRecord } from '../../lib/pb-worksheet-mapper';
 
@@ -20,7 +19,7 @@ export async function getStaticPaths() {
   let allPbWorksheets: any[] = [];
   try {
     const records = await pb.collection('worksheets').getFullList({ sort: '-created' });
-    allPbWorksheets = records.map(mapPbRecord);
+    allPbWorksheets = await Promise.all(records.map(mapPbRecord));
   } catch (e) {
     console.warn("Failed to fetch PB worksheets for Ghost recommendations", e);
   }
@@ -47,7 +46,7 @@ export async function getStaticPaths() {
         let sameCategory = false;
         if (categoryTag) {
           if (categoryTag === 'bilingual' || categoryTag === 'lbl-reader' || categoryTag === 'blb') {
-             sameCategory = pTags.some(t => ['bilingual', 'lbl-reader', 'blb'].includes(t));
+             sameCategory = pTags.some((t: any) => ['bilingual', 'lbl-reader', 'blb'].includes(t));
           } else {
              sameCategory = pTags.includes(categoryTag) || p.lessonType === categoryTag;
           }
@@ -73,12 +72,20 @@ const { post: initialPost, recommendations = [] } = Astro.props;
 const ogImage = initialPost.feature_image; // Original URL for OG
 const post = { ...initialPost };
 
+let featureImageObj: any = undefined;
 if (post.feature_image) {
-    post.feature_image = await downloadGhostAsset(post.feature_image, post.slug);
+    const resolved = await resolveLocalizedImage('gh', post.slug, post.feature_image.split('/').pop());
+    if (resolved && typeof resolved !== 'string') {
+        featureImageObj = resolved;
+        const optimized = await getImage({ src: resolved, width: 1200 });
+        post.feature_image = optimized.src;
+    } else {
+        post.feature_image = resolved;
+    }
 }
 
 if (post.html) {
-    post.html = await downloadGhostHtmlAssets(post.html, post.slug, import.meta.env.GHOST_API_URL);
+    post.html = await transformGhostHtml(post.html, post.slug, import.meta.env.GHOST_API_URL);
     post.html = transformComponentsToScripts(post.html);
     post.html = transformYouTubeEmbeds(post.html);
 }
@@ -159,13 +166,24 @@ const finalScripts = Array.from(scriptsToLoad);
 
   <article class={`prose lg:prose-xl max-w-[720px] mx-auto ${tagClassList}`} data-pagefind-body>
     <ShareButtons title={post.title} description={post.excerpt || post.custom_excerpt} />
-    {post.feature_image && (
+    {featureImageObj ? (
         <div class="w-full max-h-[400px] bg-slate-50 sm:rounded-2xl sm:shadow-md mx-auto my-4 sm:my-8 overflow-hidden flex justify-center">
           <Image 
-            src={post.feature_image} 
-            alt={post.title} 
+            src={featureImageObj} 
+            alt={post.title || ""} 
             width={1200}
             height={630}
+            data-pagefind-meta="image[src]"
+            class="max-h-[400px] object-contain" 
+          />
+        </div>
+    ) : post.feature_image && (
+        <div class="w-full max-h-[400px] bg-slate-50 sm:rounded-2xl sm:shadow-md mx-auto my-4 sm:my-8 overflow-hidden flex justify-center">
+          <img 
+            src={post.feature_image} 
+            alt={post.title || ""} 
+            width="1200"
+            height="630"
             data-pagefind-meta="image[src]"
             class="max-h-[400px] object-contain" 
           />

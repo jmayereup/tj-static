@@ -1,10 +1,11 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { Image, getImage } from 'astro:assets';
 import { pb } from '../../lib/pocketbase';
-import { downloadAsset } from '../../utils/downloadAsset';
+import { resolveLocalizedAsset, resolveLocalizedImage } from '../../utils/assetResolver';
+import { transformPbContent } from '../../utils/contentTransformer';
 import { renderContentAsHtml } from '../../utils/serialization';
 import ShareButtons from '../../components/ShareButtons.astro';
-
 import Recommendations from '../../components/Recommendations.astro';
 import { getAllPosts } from '../../lib/ghost-utils';
 import { mapPbRecord } from '../../lib/pb-worksheet-mapper';
@@ -15,7 +16,7 @@ export async function getStaticPaths() {
     const normalizedGhost = ghostPosts.map(p => ({ ...p, type: 'gh', source: 'ghost' }));
 
     const worksheets = await pb.collection('worksheets').getFullList();
-    const normalizedPb = worksheets.map(mapPbRecord);
+    const normalizedPb = await Promise.all(worksheets.map(mapPbRecord));
     
     const allNormalized = [...normalizedGhost, ...normalizedPb];
 
@@ -33,7 +34,7 @@ export async function getStaticPaths() {
           let sameCategory = false;
           if (category) {
             if (category === 'bilingual' || category === 'lbl-reader' || category === 'blb') {
-               sameCategory = pTags.some(t => ['bilingual', 'lbl-reader', 'blb'].includes(t));
+               sameCategory = pTags.some((t: string) => ['bilingual', 'lbl-reader', 'blb'].includes(t));
             } else {
                const normalizedCategory = category === 'information-gap' ? 'speaking' : 
                                          category === 'focused-reading' ? 'book' : category;
@@ -65,12 +66,23 @@ const { worksheet, recommendations = [] } = Astro.props as { worksheet: any; rec
 
 let content = typeof worksheet.content === 'string' ? JSON.parse(worksheet.content || '{}') : (worksheet.content || {});
 
-let imageUrl = worksheet.image ? pb.files.getURL(worksheet, worksheet.image) : undefined;
+// Transform content at build time (optimizes images)
+content = await transformPbContent(content, worksheet.id);
 
-let audioFileUrl = worksheet.audioFile ? pb.files.getURL(worksheet, worksheet.audioFile) : undefined;
-if (audioFileUrl) {
-  audioFileUrl = await downloadAsset(audioFileUrl, worksheet.id, worksheet.audioFile);
+let imageUrl: any = undefined;
+let imageObj: any = undefined;
+if (worksheet.image) {
+  const resolved = await resolveLocalizedImage('pb', worksheet.id, worksheet.image);
+  if (resolved && typeof resolved !== 'string') {
+    imageObj = resolved;
+    const optimized = await getImage({ src: resolved, width: 1200 });
+    imageUrl = optimized.src;
+  } else {
+    imageUrl = resolved;
+  }
 }
+
+let audioFileUrl = worksheet.audioFile ? resolveLocalizedAsset('pb', worksheet.id, worksheet.audioFile) : undefined;
 
 const parsedLesson = {
   ...worksheet,
@@ -78,9 +90,8 @@ const parsedLesson = {
   image: imageUrl,
   audioFile: audioFileUrl
 };
-const ogImage = worksheet.image ? pb.files.getURL(worksheet, worksheet.image) : undefined;
-const currentLang = (worksheet.language || 'English').toLowerCase();
 
+const currentLang = (worksheet.language || 'English').toLowerCase();
 const contentFallbackHtml = renderContentAsHtml(content);
 ---
 <Layout 
@@ -88,7 +99,7 @@ const contentFallbackHtml = renderContentAsHtml(content);
   currentLang={currentLang} 
   currentTag="worksheet"
   description={worksheet?.seo || worksheet?.description}
-  image={ogImage}
+  image={imageUrl}
   article={true}
 >
 
@@ -140,7 +151,11 @@ const contentFallbackHtml = renderContentAsHtml(content);
 
   <article class="max-w-6xl mx-auto bg-white p-4 sm:p-6 sm:rounded-2xl sm:shadow-sm sm:border border-slate-100" data-pagefind-body>
     <ShareButtons title={worksheet.title} description={worksheet.seo || worksheet.description} />
-    {ogImage && <img src={ogImage} alt="" data-pagefind-meta="image[src]" class="hidden" width="1200" height="630" />}
+    {imageObj ? (
+      <Image src={imageObj} alt="" data-pagefind-meta="image[src]" class="hidden" width={1200} height={630} />
+    ) : imageUrl && (
+      <img src={imageUrl} alt="" data-pagefind-meta="image[src]" class="hidden" width="1200" height="630" />
+    )}
 
 
     <!-- Web Component Wrapper -->

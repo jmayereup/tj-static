@@ -22,3 +22,8 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+# localized assets
++public/ghost-assets/
++public/pocketbase-assets/
++src/assets/ghost-assets/
++src/assets/pocketbase-assets/
