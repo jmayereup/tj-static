@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { Image, getImage } from 'astro:assets';
 import { pb } from '../../lib/pocketbase';
 import { resolveLocalizedAsset, resolveLocalizedImage } from '../../utils/assetResolver';
 import { transformPbContent } from '../../utils/contentTransformer';
@@ -69,8 +70,16 @@ let content = typeof worksheet.content === 'string' ? JSON.parse(worksheet.conte
 content = await transformPbContent(content, worksheet.id);
 
 let imageUrl: any = undefined;
+let imageObj: any = undefined;
 if (worksheet.image) {
-  imageUrl = await resolveLocalizedImage('pb', worksheet.id, worksheet.image);
+  const resolved = await resolveLocalizedImage('pb', worksheet.id, worksheet.image);
+  if (resolved && typeof resolved !== 'string') {
+    imageObj = resolved;
+    const optimized = await getImage({ src: resolved, width: 1200 });
+    imageUrl = optimized.src;
+  } else {
+    imageUrl = resolved;
+  }
 }
 
 let audioFileUrl = worksheet.audioFile ? resolveLocalizedAsset('pb', worksheet.id, worksheet.audioFile) : undefined;
@@ -142,7 +151,11 @@ const contentFallbackHtml = renderContentAsHtml(content);
 
   <article class="max-w-6xl mx-auto bg-white p-4 sm:p-6 sm:rounded-2xl sm:shadow-sm sm:border border-slate-100" data-pagefind-body>
     <ShareButtons title={worksheet.title} description={worksheet.seo || worksheet.description} />
-    {imageUrl && <img src={imageUrl} alt="" data-pagefind-meta="image[src]" class="hidden" width="1200" height="630" />}
+    {imageObj ? (
+      <Image src={imageObj} alt="" data-pagefind-meta="image[src]" class="hidden" width={1200} height={630} />
+    ) : imageUrl && (
+      <img src={imageUrl} alt="" data-pagefind-meta="image[src]" class="hidden" width="1200" height="630" />
+    )}
 
 
     <!-- Web Component Wrapper -->
