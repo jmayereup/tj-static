@@ -1,6 +1,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Load .env file for local development if it exists
+if (fs.existsSync('.env')) {
+  process.loadEnvFile('.env');
+}
+
 // Environment variables from Node --env-file=.env or process.env
 const GHOST_URL = process.env.GHOST_API_URL || '';
 const GHOST_KEY = process.env.GHOST_CONTENT_API_KEY || '';
