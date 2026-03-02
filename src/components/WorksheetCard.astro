@@ -14,7 +14,6 @@ const levelTag = post.tags?.find((tag: any) =>
 
 const isPb = post.type === "pb" || post.source === "pocketbase";
 const href = isPb ? `/pb/${post.slug || post.id}` : `/gh/${post.slug}`;
-const displayLangPrefix = (lang || "").substring(0, 2).toUpperCase();
 
 // Activity Type Detection & Tag Normalization
 const postTags = post.tags || [];
@@ -103,10 +102,11 @@ if (isPb) {
         {(() => {
           const lowerLang = (lang || "").toLowerCase();
           const pbAllowedTags = ["history", "science", "fable", "general", "video", "m1-2"];
+          const ghAllowedTags = ["en-th", "en-sp", "en-fr", "en-de", "blb", "book"];
           const displayTags = normalizedTags.filter(
             (t: any) =>
               !["a1", "a2", "b1", "b2", lowerLang].includes(t.cleanName) &&
-              (isPb ? pbAllowedTags.includes(t.cleanName) : !t.isInternal)
+              (isPb ? pbAllowedTags.includes(t.cleanName) : ghAllowedTags.includes(t.cleanSlug))
           );
           
           if (displayTags.length > 0) {
