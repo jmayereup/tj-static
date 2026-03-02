@@ -13,8 +13,7 @@ try {
     .collection("worksheets")
     .getFullList({ sort: "-created" });
   
-  const pbWorksheets = records
-    .map(mapPbRecord)
+  const pbWorksheets = (await Promise.all(records.map(mapPbRecord)))
     .filter((post) => post.language === "english");
 
   // Fetch Ghost posts filtered by English tag

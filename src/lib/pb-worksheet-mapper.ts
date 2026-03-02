@@ -1,14 +1,10 @@
 import type { RecordModel } from "pocketbase";
 import { pb } from "./pocketbase";
-import { downloadAsset } from "../utils/downloadAsset";
+import { resolveLocalizedImage } from "../utils/assetResolver";
 
 /**
  * Maps a raw PocketBase worksheet record into the normalized post shape
  * expected by WorksheetCard and all listing pages.
- *
- * Tags are mapped as:
- *   [{ name: level }, ...record.tags (string[]), { name: language }]
- * so WorksheetCard's allowlist filter works correctly.
  */
 export async function mapPbRecord(record: RecordModel): Promise<Record<string, any>> {
   let content = record.content;
@@ -25,12 +21,10 @@ export async function mapPbRecord(record: RecordModel): Promise<Record<string, a
   description =
     description.substring(0, 120) + (description.length > 120 ? "..." : "");
 
-  let featureImage: string | undefined = record.image
-    ? pb.files.getURL(record, record.image)
-    : undefined;
+  let featureImage: any = undefined;
 
-  if (featureImage && record.image) {
-    featureImage = await downloadAsset(featureImage, record.id, record.image);
+  if (record.image) {
+    featureImage = await resolveLocalizedImage('pb', record.id, record.image);
   }
 
   if (!featureImage && record.videoUrl) {

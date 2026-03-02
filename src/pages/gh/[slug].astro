@@ -2,14 +2,13 @@
 import Layout from '../../layouts/Layout.astro';
 import { Image } from 'astro:assets';
 import { getAllPosts } from '../../lib/ghost-utils';
-import { downloadGhostAsset, downloadGhostHtmlAssets } from '../../utils/downloadGhostAsset';
+import { resolveLocalizedImage } from '../../utils/assetResolver';
+import { transformGhostHtml } from '../../utils/contentTransformer';
 import { transformComponentsToScripts } from '../../utils/transformComponentsToScripts';
 import { transformYouTubeEmbeds } from '../../utils/transformYouTubeEmbeds';
 import { LANGUAGES } from '../../utils/tags';
 import ShareButtons from '../../components/ShareButtons.astro';
 import Recommendations from '../../components/Recommendations.astro';
-
-
 import { pb } from '../../lib/pocketbase';
 import { mapPbRecord } from '../../lib/pb-worksheet-mapper';
 
@@ -74,11 +73,11 @@ const ogImage = initialPost.feature_image; // Original URL for OG
 const post = { ...initialPost };
 
 if (post.feature_image) {
-    post.feature_image = await downloadGhostAsset(post.feature_image, post.slug);
+    post.feature_image = await resolveLocalizedImage('gh', post.slug, post.feature_image.split('/').pop());
 }
 
 if (post.html) {
-    post.html = await downloadGhostHtmlAssets(post.html, post.slug, import.meta.env.GHOST_API_URL);
+    post.html = await transformGhostHtml(post.html, post.slug, import.meta.env.GHOST_API_URL);
     post.html = transformComponentsToScripts(post.html);
     post.html = transformYouTubeEmbeds(post.html);
 }

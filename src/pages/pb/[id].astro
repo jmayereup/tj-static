@@ -1,10 +1,10 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { pb } from '../../lib/pocketbase';
-import { downloadAsset } from '../../utils/downloadAsset';
+import { resolveLocalizedAsset, resolveLocalizedImage } from '../../utils/assetResolver';
+import { transformPbContent } from '../../utils/contentTransformer';
 import { renderContentAsHtml } from '../../utils/serialization';
 import ShareButtons from '../../components/ShareButtons.astro';
-
 import Recommendations from '../../components/Recommendations.astro';
 import { getAllPosts } from '../../lib/ghost-utils';
 import { mapPbRecord } from '../../lib/pb-worksheet-mapper';
@@ -65,48 +65,15 @@ const { worksheet, recommendations = [] } = Astro.props as { worksheet: any; rec
 
 let content = typeof worksheet.content === 'string' ? JSON.parse(worksheet.content || '{}') : (worksheet.content || {});
 
-// Recursive function to download images in JSON content
-async function localizeContentImages(obj: any): Promise<any> {
-  if (!obj || typeof obj !== 'object') return obj;
-  
-  if (Array.isArray(obj)) {
-    return Promise.all(obj.map(item => localizeContentImages(item)));
-  }
-  
-  const newObj = { ...obj };
-  
-  // Look for image type nodes or any 'src' that looks like a PB URL
-  // In Tiptap/ProseMirror, images are { type: 'image', attrs: { src: '...' } }
-  if (newObj.type === 'image' && newObj.attrs?.src) {
-    const src = newObj.attrs.src;
-    if (src.includes('/api/files/')) {
-      const parts = src.split('/');
-      const filename = parts[parts.length - 1].split('?')[0]; // strip query params
-      newObj.attrs.src = await downloadAsset(src, worksheet.id, filename);
-    }
-  }
-  
-  // Recursively process all properties
-  for (const key in newObj) {
-    if (key !== 'attrs' || newObj.type !== 'image') {
-      newObj[key] = await localizeContentImages(newObj[key]);
-    }
-  }
-  
-  return newObj;
+// Transform content at build time (optimizes images)
+content = await transformPbContent(content, worksheet.id);
+
+let imageUrl: any = undefined;
+if (worksheet.image) {
+  imageUrl = await resolveLocalizedImage('pb', worksheet.id, worksheet.image);
 }
 
-content = await localizeContentImages(content);
-
-let imageUrl = worksheet.image ? pb.files.getURL(worksheet, worksheet.image) : undefined;
-if (imageUrl) {
-  imageUrl = await downloadAsset(imageUrl, worksheet.id, worksheet.image);
-}
-
-let audioFileUrl = worksheet.audioFile ? pb.files.getURL(worksheet, worksheet.audioFile) : undefined;
-if (audioFileUrl) {
-  audioFileUrl = await downloadAsset(audioFileUrl, worksheet.id, worksheet.audioFile);
-}
+let audioFileUrl = worksheet.audioFile ? resolveLocalizedAsset('pb', worksheet.id, worksheet.audioFile) : undefined;
 
 const parsedLesson = {
   ...worksheet,
@@ -114,9 +81,8 @@ const parsedLesson = {
   image: imageUrl,
   audioFile: audioFileUrl
 };
-const ogImage = worksheet.image ? pb.files.getURL(worksheet, worksheet.image) : undefined;
-const currentLang = (worksheet.language || 'English').toLowerCase();
 
+const currentLang = (worksheet.language || 'English').toLowerCase();
 const contentFallbackHtml = renderContentAsHtml(content);
 ---
 <Layout 
@@ -124,7 +90,7 @@ const contentFallbackHtml = renderContentAsHtml(content);
   currentLang={currentLang} 
   currentTag="worksheet"
   description={worksheet?.seo || worksheet?.description}
-  image={ogImage}
+  image={imageUrl}
   article={true}
 >
 
