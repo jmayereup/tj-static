@@ -15,7 +15,7 @@ export async function getStaticPaths() {
     const normalizedGhost = ghostPosts.map(p => ({ ...p, type: 'gh', source: 'ghost' }));
 
     const worksheets = await pb.collection('worksheets').getFullList();
-    const normalizedPb = worksheets.map(mapPbRecord);
+    const normalizedPb = await Promise.all(worksheets.map(mapPbRecord));
     
     const allNormalized = [...normalizedGhost, ...normalizedPb];
 
@@ -33,7 +33,7 @@ export async function getStaticPaths() {
           let sameCategory = false;
           if (category) {
             if (category === 'bilingual' || category === 'lbl-reader' || category === 'blb') {
-               sameCategory = pTags.some(t => ['bilingual', 'lbl-reader', 'blb'].includes(t));
+               sameCategory = pTags.some((t: string) => ['bilingual', 'lbl-reader', 'blb'].includes(t));
             } else {
                const normalizedCategory = category === 'information-gap' ? 'speaking' : 
                                          category === 'focused-reading' ? 'book' : category;
@@ -65,7 +65,43 @@ const { worksheet, recommendations = [] } = Astro.props as { worksheet: any; rec
 
 let content = typeof worksheet.content === 'string' ? JSON.parse(worksheet.content || '{}') : (worksheet.content || {});
 
+// Recursive function to download images in JSON content
+async function localizeContentImages(obj: any): Promise<any> {
+  if (!obj || typeof obj !== 'object') return obj;
+  
+  if (Array.isArray(obj)) {
+    return Promise.all(obj.map(item => localizeContentImages(item)));
+  }
+  
+  const newObj = { ...obj };
+  
+  // Look for image type nodes or any 'src' that looks like a PB URL
+  // In Tiptap/ProseMirror, images are { type: 'image', attrs: { src: '...' } }
+  if (newObj.type === 'image' && newObj.attrs?.src) {
+    const src = newObj.attrs.src;
+    if (src.includes('/api/files/')) {
+      const parts = src.split('/');
+      const filename = parts[parts.length - 1].split('?')[0]; // strip query params
+      newObj.attrs.src = await downloadAsset(src, worksheet.id, filename);
+    }
+  }
+  
+  // Recursively process all properties
+  for (const key in newObj) {
+    if (key !== 'attrs' || newObj.type !== 'image') {
+      newObj[key] = await localizeContentImages(newObj[key]);
+    }
+  }
+  
+  return newObj;
+}
+
+content = await localizeContentImages(content);
+
 let imageUrl = worksheet.image ? pb.files.getURL(worksheet, worksheet.image) : undefined;
+if (imageUrl) {
+  imageUrl = await downloadAsset(imageUrl, worksheet.id, worksheet.image);
+}
 
 let audioFileUrl = worksheet.audioFile ? pb.files.getURL(worksheet, worksheet.audioFile) : undefined;
 if (audioFileUrl) {
@@ -140,7 +176,7 @@ const contentFallbackHtml = renderContentAsHtml(content);
 
   <article class="max-w-6xl mx-auto bg-white p-4 sm:p-6 sm:rounded-2xl sm:shadow-sm sm:border border-slate-100" data-pagefind-body>
     <ShareButtons title={worksheet.title} description={worksheet.seo || worksheet.description} />
-    {ogImage && <img src={ogImage} alt="" data-pagefind-meta="image[src]" class="hidden" width="1200" height="630" />}
+    {imageUrl && <img src={imageUrl} alt="" data-pagefind-meta="image[src]" class="hidden" width="1200" height="630" />}
 
 
     <!-- Web Component Wrapper -->

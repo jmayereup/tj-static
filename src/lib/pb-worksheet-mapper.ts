@@ -1,5 +1,6 @@
 import type { RecordModel } from "pocketbase";
 import { pb } from "./pocketbase";
+import { downloadAsset } from "../utils/downloadAsset";
 
 /**
  * Maps a raw PocketBase worksheet record into the normalized post shape
@@ -9,7 +10,7 @@ import { pb } from "./pocketbase";
  *   [{ name: level }, ...record.tags (string[]), { name: language }]
  * so WorksheetCard's allowlist filter works correctly.
  */
-export function mapPbRecord(record: RecordModel): Record<string, any> {
+export async function mapPbRecord(record: RecordModel): Promise<Record<string, any>> {
   let content = record.content;
   if (typeof content === "string") {
     try {
@@ -27,6 +28,10 @@ export function mapPbRecord(record: RecordModel): Record<string, any> {
   let featureImage: string | undefined = record.image
     ? pb.files.getURL(record, record.image)
     : undefined;
+
+  if (featureImage && record.image) {
+    featureImage = await downloadAsset(featureImage, record.id, record.image);
+  }
 
   if (!featureImage && record.videoUrl) {
     const regExp =
