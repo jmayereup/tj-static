@@ -1,12 +1,10 @@
 ---
-import Layout from "../../layouts/Layout.astro";
+import ListingPageLayout from "../../layouts/ListingPageLayout.astro";
 import { getAllPosts } from "../../lib/ghost-utils";
 import { LANGUAGES } from "../../utils/tags";
 import { pb } from "../../lib/pocketbase";
 import { mapPbRecord } from "../../lib/pb-worksheet-mapper";
-import LevelFilter from "../../components/LevelFilter.astro";
-import Pagination from "../../components/Pagination.astro";
-import WorksheetCard from "../../components/WorksheetCard.astro";
+
 
 export async function getStaticPaths({ paginate }: any) {
   const allPaths: any[] = [];
@@ -46,7 +44,6 @@ export async function getStaticPaths({ paginate }: any) {
 
 const { page } = Astro.props as { page: any };
 const { lang } = Astro.params;
-const posts = page.data;
 
 const titleMap: Record<string, string> = {
   french: "French",
@@ -59,39 +56,10 @@ const titleMap: Record<string, string> = {
 const displayLang = titleMap[lang as string] || lang;
 ---
 
-<Layout
-  title={`Teacher Jake Worksheets - ${displayLang} (Page ${page.currentPage})`}
-  currentLang={lang}
-  description={`Browse our collection of interactive ${displayLang} language learning materials.`}
+<ListingPageLayout
+  page={page}
+  lang={lang as string}
+  displayLang={displayLang || ""}
 >
-  <div class="px-4">
-    <div class="mb-4 text-center pt-4">
-      <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-[#06422f] tracking-tight capitalize">
-        {displayLang}
-      </h1>
-      <p class="text-lg text-[#4a5568] max-w-2xl mx-auto">
-        Browse our collection of interactive {displayLang} language learning materials,
-        reading exercises, and quizzes.
-      </p>
-    </div>
-
-    <LevelFilter currentLang={lang as string} currentLevel="all" />
-
-    {posts.length === 0 ? (
-      <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
-        <p class="text-lg font-medium">No {displayLang} worksheets found.</p>
-      </div>
-    ) : (
-      <div
-        class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        transition:name="content-grid"
-      >
-        {posts.map((post: any) => (
-          <WorksheetCard post={post} lang={lang as string} />
-        ))}
-      </div>
-    )}
-
-    <Pagination page={page} />
-  </div>
-</Layout>
+  <Fragment slot="title">{displayLang}</Fragment>
+</ListingPageLayout>

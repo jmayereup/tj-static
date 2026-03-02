@@ -1,14 +1,13 @@
 ---
-import Layout from "../../../../layouts/Layout.astro";
+import ListingPageLayout from "../../../../layouts/ListingPageLayout.astro";
 import { getAllPosts } from "../../../../lib/ghost-utils";
 import { LANGUAGES, getLevelFromTags } from "../../../../utils/tags";
-import LevelFilter from "../../../../components/LevelFilter.astro";
-import Pagination from "../../../../components/Pagination.astro";
-import WorksheetCard from "../../../../components/WorksheetCard.astro";
 import { pb } from "../../../../lib/pocketbase";
 import { mapPbRecord } from "../../../../lib/pb-worksheet-mapper";
 
+
 export async function getStaticPaths({ paginate }: any) {
+  // ... (keeping existing logic)
   const allPaths: any[] = [];
   const levels = ["a1", "a2", "b1", "b2"];
 
@@ -73,7 +72,6 @@ export async function getStaticPaths({ paginate }: any) {
 
 const { page } = Astro.props as { page: any };
 const { lang, level } = Astro.params;
-const posts = page.data || [];
 
 const titleMap: Record<string, string> = {
   french: "French",
@@ -85,42 +83,10 @@ const titleMap: Record<string, string> = {
 
 const displayLang = titleMap[lang as string] || lang;
 ---
-<Layout
-  title={`Teacher Jake Worksheets - ${displayLang} ${level ? level.toString().toUpperCase() : ""} (Page ${page.currentPage})`}
-  currentLang={lang}
-  description={`Browse our collection of interactive ${displayLang} language learning materials, reading exercises, and quizzes.`}
->
-  <div class="px-4">
-    <div class="mb-4 text-center pt-4">
-      <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-[#06422f] tracking-tight capitalize">
-        {displayLang} Worksheets
-      </h1>
-      <p class="text-lg text-[#4a5568] max-w-2xl mx-auto">
-        Browse our collection of interactive {displayLang} language learning materials,
-        reading exercises, and quizzes.
-      </p>
-    </div>
 
-    <LevelFilter currentLang={lang as string} currentLevel={level as string} />
-
-    {posts.length === 0 ? (
-      <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
-        <p class="text-lg font-medium">
-          No {displayLang} {level?.toString().toUpperCase()} worksheets found.
-        </p>
-        <p class="mt-2 opacity-80">Check back later for more content.</p>
-      </div>
-    ) : (
-      <div
-        class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        transition:name="content-grid"
-      >
-        {posts.map((post: any) => (
-          <WorksheetCard post={post} lang={lang as string} />
-        ))}
-      </div>
-    )}
-
-    <Pagination page={page} />
-  </div>
-</Layout>
+<ListingPageLayout
+  page={page}
+  lang={lang as string}
+  displayLang={displayLang || ""}
+  level={level as string}
+/>

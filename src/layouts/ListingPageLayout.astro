@@ -1,0 +1,93 @@
+---
+import Layout from "./Layout.astro";
+import WorksheetCard from "../components/WorksheetCard.astro";
+import Pagination from "../components/Pagination.astro";
+import LevelFilter from "../components/LevelFilter.astro";
+
+interface Props {
+  page: any;
+  lang: string;
+  displayLang: string;
+  title?: string;
+  description?: string;
+  level?: string;
+  tag?: string;
+  filterLabel?: string;
+}
+
+const { 
+  page, 
+  lang, 
+  displayLang, 
+  title, 
+  description, 
+  level, 
+  tag, 
+  filterLabel 
+} = Astro.props;
+
+const posts = page.data || [];
+
+// Default SEO Title
+const seoTitle = title || `Teacher Jake ${filterLabel ? filterLabel + ' - ' : ''}${displayLang + ' '}${level ? ' ' + level.toUpperCase() : ''} (Page ${page.currentPage})`;
+
+// Default SEO Description
+const seoDescription = description || `Browse our collection of interactive ${displayLang} learning materials, reading exercises, and quizzes.`;
+
+// Default Page Title (h1)
+const pageTitle = filterLabel 
+  ? `${displayLang} ${filterLabel}` 
+  : `${displayLang} Worksheets`;
+
+// Default Page Description (p)
+const pageDescription = `Browse our collection of interactive ${displayLang + ' '}  ${filterLabel ? filterLabel.toLowerCase() : 'language'} learning materials.`;
+---
+
+<Layout
+  title={seoTitle}
+  currentLang={lang}
+  currentTag={tag}
+  description={seoDescription}
+>
+  <div class="px-4">
+    <div class="mb-4 text-center pt-4">
+      <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-[#06422f] tracking-tight capitalize">
+        <slot name="title">{pageTitle}</slot>
+      </h1>
+      <p class="text-lg text-[#4a5568] max-w-2xl mx-auto">
+        <slot name="description">{pageDescription}</slot>
+      </p>
+    </div>
+
+    <div class="mb-4">
+      <LevelFilter 
+        currentLang={lang} 
+        currentLevel={level || "all"} 
+        currentTag={tag}
+      />
+      <slot name="extra-filters" />
+    </div>
+
+    {posts.length === 0 ? (
+      <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
+        <slot name="empty-state">
+          <p class="text-lg font-medium">
+            No {displayLang} {level ? level.toUpperCase() : ''} {filterLabel || 'worksheets'} found.
+          </p>
+          <p class="mt-2 opacity-80">Check back later for more content.</p>
+        </slot>
+      </div>
+    ) : (
+      <div
+        class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+        transition:name="content-grid"
+      >
+        {posts.map((post: any) => (
+          <WorksheetCard post={post} lang={lang} />
+        ))}
+      </div>
+    )}
+
+    <Pagination page={page} />
+  </div>
+</Layout>

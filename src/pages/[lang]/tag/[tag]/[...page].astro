@@ -1,13 +1,11 @@
 ---
-import Layout from '../../../../layouts/Layout.astro';
+import ListingPageLayout from '../../../../layouts/ListingPageLayout.astro';
 import { getAllPosts } from '../../../../lib/ghost-utils';
 import { LANGUAGES, CATEGORY_FILTERS, WORKSHEET_TOPICS } from '../../../../utils/tags';
-import LevelFilter from '../../../../components/LevelFilter.astro';
-import TopicFilter from '../../../../components/TopicFilter.astro';
-import Pagination from '../../../../components/Pagination.astro';
-import WorksheetCard from '../../../../components/WorksheetCard.astro';
 import { pb } from '../../../../lib/pocketbase';
 import { mapPbRecord } from '../../../../lib/pb-worksheet-mapper';
+import TopicFilter from '../../../../components/TopicFilter.astro';
+
 
 export async function getStaticPaths({ paginate }: any) {
   const allPaths: any[] = [];
@@ -87,8 +85,7 @@ export async function getStaticPaths({ paginate }: any) {
 }
 
 const { page } = Astro.props as { page: any };
-const { lang, tag } = Astro.params;
-const posts = page.data;
+const { lang, tag } = Astro.params as { lang: string; tag: string };
 
 const titleMap: Record<string, string> = {
   french: 'French',
@@ -98,49 +95,38 @@ const titleMap: Record<string, string> = {
   thai: 'Thai',
 };
 
-const displayLang = titleMap[lang as string] || lang;
+const displayLang = titleMap[lang] || lang;
 const filterLabel = CATEGORY_FILTERS.find((f: any) => f.id === tag)?.label || 
                    WORKSHEET_TOPICS.find((f: any) => f.id === tag)?.label || 
-                   (tag as string);
+                   tag;
 
 const isWorksheetRelated = tag === 'worksheet' || WORKSHEET_TOPICS.some(t => t.id === tag);
 ---
-<Layout
-  title={`Teacher Jake ${filterLabel} - ${displayLang} (Page ${page.currentPage})`}
-  currentLang={lang}
-  currentTag={tag}
+
+<ListingPageLayout
+  page={page}
+  lang={lang}
+  displayLang={displayLang}
+  tag={tag}
+  filterLabel={filterLabel}
 >
-  <div class="px-4">
-    <div class="mb-4 text-center pt-2">
-      <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-emerald-950 tracking-tight capitalize">
-        {displayLang} {filterLabel}
-      </h1>
-      <p class="text-lg text-slate-600 max-w-2xl mx-auto">
-        Browse our collection of interactive {displayLang}{" "}
-        {(filterLabel as string).toLowerCase()} and language learning activities.
-      </p>
-    </div>
-<div class="mb-4">
-  <LevelFilter currentLang={lang as string} currentTag={tag as string} currentLevel="all" />
-  {isWorksheetRelated && <TopicFilter currentLang={lang as string} currentTopic={tag as string} />}
-</div>
+  <Fragment slot="title">{displayLang + ' ' + filterLabel}</Fragment>
+  
+  <Fragment slot="description">
+    Browse our collection of interactive {displayLang}{" "}
+    {filterLabel.toLowerCase()} and language learning materials.
+  </Fragment>
 
-    {posts.length === 0 ? (
-      <div class="bg-amber-50 text-amber-800 p-6 rounded-xl border border-amber-200 text-center shadow-sm">
-        <p class="text-lg font-medium">No {displayLang} {(filterLabel as string).toLowerCase()} found.</p>
-        <p class="mt-2 opacity-80">Make sure your Ghost posts have the tag "{displayLang}".</p>
-      </div>
-    ) : (
-      <div
-        class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-        transition:name="content-grid"
-      >
-        {posts.map((post: any) => (
-          <WorksheetCard post={post} lang={lang as string} />
-        ))}
-      </div>
-    )}
+  {isWorksheetRelated && (
+    <TopicFilter 
+      slot="extra-filters" 
+      currentLang={lang} 
+      currentTopic={tag} 
+    />
+  )}
 
-    <Pagination page={page} />
-  </div>
-</Layout>
+  <Fragment slot="empty-state">
+    <p class="text-lg font-medium">No {displayLang} {filterLabel.toLowerCase()} found.</p>
+    <p class="mt-2 opacity-80">Make sure your Ghost posts have the tag "{displayLang}".</p>
+  </Fragment>
+</ListingPageLayout>
