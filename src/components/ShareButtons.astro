@@ -90,12 +90,10 @@ const {
       const performNativeShare = async () => {
         if ('share' in navigator) {
           try {
-            // Messenger and some other apps duplicate the summary if you send both title and text.
-            // We combine them into text and omit title for a cleaner experience.
-            await navigator.share({
-              text: `${title}${description ? '\n\n' + description : ''}`,
-              url: url,
-            });
+            // Pass only the URL so each app builds its own link preview from OG metadata.
+            // Passing `text` alongside `url` causes Messenger (and others) to show the
+            // text content duplicated next to the link card, or to strip the text entirely.
+            await navigator.share({ url });
           } catch (err) {
             if ((err as Error).name !== 'AbortError') {
               console.error('Error sharing:', err);
