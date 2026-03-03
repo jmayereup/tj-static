@@ -1,7 +1,7 @@
 ---
 import Layout from "./Layout.astro";
 import WorksheetCard from "../components/WorksheetCard.astro";
-import Pagination from "../components/Pagination.astro";
+import InfiniteScroll from "../components/InfiniteScroll.astro";
 import LevelFilter from "../components/LevelFilter.astro";
 
 interface Props {
@@ -79,6 +79,7 @@ const pageDescription = `Browse our collection of interactive ${displayLang + ' 
       </div>
     ) : (
       <div
+        id="card-grid"
         class="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         transition:name="content-grid"
       >
@@ -88,6 +89,6 @@ const pageDescription = `Browse our collection of interactive ${displayLang + ' 
       </div>
     )}
 
-    <Pagination page={page} />
+    <InfiniteScroll nextUrl={page.url.next} />
   </div>
 </Layout>

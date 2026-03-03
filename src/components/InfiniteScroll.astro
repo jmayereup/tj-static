@@ -1,0 +1,139 @@
+---
+interface Props {
+  nextUrl?: string;
+}
+
+const { nextUrl } = Astro.props;
+---
+
+<div
+  id="scroll-sentinel"
+  data-next={nextUrl || ""}
+  class="flex flex-col items-center justify-center py-12 gap-4"
+  aria-live="polite"
+>
+  {nextUrl ? (
+    <div id="scroll-loader" class="flex items-center gap-2 text-slate-400">
+      <span class="loader-ring"></span>
+      <span class="text-sm font-medium">Loading more…</span>
+    </div>
+  ) : (
+    <p id="scroll-end" class="text-slate-400 text-sm font-medium tracking-wide">
+      ✦ You've seen it all ✦
+    </p>
+  )}
+</div>
+
+<style>
+  .loader-ring {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #cbd5e1;
+    border-top-color: #10b981;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  #scroll-sentinel {
+    min-height: 80px;
+  }
+</style>
+
+<script>
+  function initInfiniteScroll() {
+    const sentinel = document.getElementById("scroll-sentinel");
+    const grid = document.getElementById("card-grid");
+
+    if (!sentinel || !grid) return;
+
+    // If there's no next URL from the start, nothing to observe
+    if (!sentinel.dataset.next) return;
+
+    let loading = false;
+
+    const loader = document.getElementById("scroll-loader");
+    const endMsg = document.getElementById("scroll-end");
+
+    async function loadMore() {
+      const nextUrl = sentinel!.dataset.next;
+      if (!nextUrl || loading) return;
+
+      loading = true;
+      if (loader) loader.style.opacity = "1";
+
+      try {
+        const res = await fetch(nextUrl);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+
+        // Grab cards from the fetched page's grid
+        const fetchedGrid = doc.getElementById("card-grid");
+        if (fetchedGrid) {
+          const newCards = Array.from(fetchedGrid.children);
+          newCards.forEach((card) => {
+            // Animate cards in
+            (card as HTMLElement).style.opacity = "0";
+            (card as HTMLElement).style.transform = "translateY(16px)";
+            grid!.appendChild(card);
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                (card as HTMLElement).style.transition =
+                  "opacity 0.35s ease, transform 0.35s ease";
+                (card as HTMLElement).style.opacity = "1";
+                (card as HTMLElement).style.transform = "translateY(0)";
+              });
+            });
+          });
+        }
+
+        // Find the next page's next URL from the fetched document
+        const nextSentinel = doc.getElementById("scroll-sentinel");
+        const newNextUrl = nextSentinel?.dataset.next || "";
+
+        sentinel!.dataset.next = newNextUrl;
+
+        if (!newNextUrl) {
+          // All pages exhausted — show end message
+          if (loader) loader.style.display = "none";
+          if (endMsg) {
+            endMsg.style.display = "block";
+          } else {
+            const p = document.createElement("p");
+            p.textContent = "✦ You've seen it all ✦";
+            p.className = "text-slate-400 text-sm font-medium tracking-wide";
+            sentinel!.appendChild(p);
+          }
+          observer.disconnect();
+        }
+      } catch (err) {
+        console.error("Infinite scroll fetch failed:", err);
+      } finally {
+        loading = false;
+        if (loader && sentinel!.dataset.next) loader.style.opacity = "0.4";
+      }
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMore();
+        }
+      },
+      { rootMargin: "300px" } // Start loading 300px before sentinel is visible
+    );
+
+    observer.observe(sentinel);
+  }
+
+  // Run on initial load and after Astro view transitions
+  initInfiniteScroll();
+  document.addEventListener("astro:page-load", initInfiniteScroll);
+</script>
