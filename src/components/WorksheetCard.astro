@@ -105,6 +105,7 @@ if (isPb) {
           const ghAllowedTags = ["en-th", "en-sp", "en-fr", "en-de", "blb", "book"];
           const displayTags = normalizedTags.filter(
             (t: any) =>
+              !t.isInternal &&
               !["a1", "a2", "b1", "b2", lowerLang].includes(t.cleanName) &&
               (isPb ? pbAllowedTags.includes(t.cleanName) : ghAllowedTags.includes(t.cleanSlug))
           );
