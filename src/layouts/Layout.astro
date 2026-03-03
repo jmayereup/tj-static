@@ -59,14 +59,14 @@ const socialImageURL = optimizedImage
     <meta property="og:type" content={article ? 'article' : 'website'} />
     <meta property="og:url" content={canonicalURL} />
     <meta property="og:title" content={title} />
-    <meta property="og:description" content={description} />
+    <meta property="og:description" content={description.slice(0, 160) + "..."} />
     <meta property="og:image" content={socialImageURL} />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content={canonicalURL} />
     <meta property="twitter:title" content={title} />
-    <meta property="twitter:description" content={description} />
+    <meta property="twitter:description" content={description.slice(0, 160) + "..."} />
     <meta property="twitter:image" content={socialImageURL} />
 
     <!-- Google Fonts: Lora -->
