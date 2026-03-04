@@ -51,6 +51,10 @@ if (isPb) {
   else if (allCleanTags.includes("pronunciation") || allCleanTags.includes("pronunciaiton")) activityType = "PRONUNCIATION";
   else if (allCleanTags.includes("listening")) activityType = "LISTENING";
   else if (allCleanTags.includes("speaking")) activityType = "SPEAKING";
+  else if (allCleanTags.includes("grammar-hearts")) activityType = "GRAMMAR HEARTS";
+  else if (allCleanTags.includes("speed-review")) activityType = "SPEED REVIEW";
+  else if (allCleanTags.includes("quiz")) activityType = "QUIZ";
+  else if (allCleanTags.includes("course")) activityType = "Course Outline";
 }
 ---
 
@@ -91,9 +95,6 @@ if (isPb) {
         </span>
       )}
       <div class="flex items-center gap-2">
-        {levelTag && (
-          <div class="h-1 w-1 rounded-full bg-slate-400" />
-        )}
         {(() => {
           const lowerLang = (lang || "").toLowerCase();
           const pbAllowedTags = ["history", "science", "fable", "general", "video", "m1-2", "game"];
@@ -113,11 +114,7 @@ if (isPb) {
             ));
           }
 
-          return (
-            <span class="text-[10px] text-slate-400 font-medium tracking-wider uppercase">
-              #{post.slug.substring(0, 4)}
-            </span>
-          );
+          return null;
         })()}
       </div>
     </div>
