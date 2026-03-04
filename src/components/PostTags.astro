@@ -1,0 +1,61 @@
+---
+interface Props {
+  post: any;
+  lang: string;
+}
+
+const { post, lang } = Astro.props;
+
+const levelTag = post.tags?.find((tag: any) =>
+  ["A1", "A2", "B1", "B2"].includes(tag.name || tag.slug?.toUpperCase())
+);
+
+const isPb = post.type === "pb" || post.source === "pocketbase" || post.lessonType !== undefined;
+
+const postTags = post.tags || [];
+const normalizedTags = postTags.map((t: any) => {
+  const name = t.name || "";
+  const slug = t.slug || "";
+  const lowerName = name.toLowerCase();
+  const lowerSlug = slug.toLowerCase();
+  return {
+    ...t,
+    lowerName,
+    lowerSlug,
+    isInternal: lowerName.startsWith("#") || lowerSlug.startsWith("hash-"),
+    cleanSlug: lowerSlug.replace(/^hash-/, "").replace(/^#/, ""),
+    cleanName: lowerName.replace(/^#/, "")
+  };
+});
+---
+
+<div class="flex flex-wrap items-center justify-center sm:justify-end gap-1.5 sm:gap-2">
+  {levelTag && (
+    <span class="text-[11px] sm:text-xs font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 shadow-sm">
+      {levelTag.name || levelTag.slug?.toUpperCase()}
+    </span>
+  )}
+  <div class="flex flex-wrap items-center justify-center sm:justify-end gap-1.5 sm:gap-2">
+    {(() => {
+      const lowerLang = (lang || "").toLowerCase();
+      const pbAllowedTags = ["history", "science", "fable", "general", "video", "m1-2", "game"];
+      const ghAllowedTags = ["en-th", "en-sp", "en-fr", "en-de", "blb", "book"];
+      const displayTags = normalizedTags.filter(
+        (t: any) =>
+          !t.isInternal &&
+          !["a1", "a2", "b1", "b2", lowerLang].includes(t.cleanName) &&
+          (isPb ? pbAllowedTags.includes(t.cleanName) : ghAllowedTags.includes(t.cleanSlug))
+      );
+      
+      if (displayTags.length > 0) {
+        return displayTags.map((tag: any) => (
+          <span class="text-[11px] sm:text-xs font-black tracking-wider text-emerald-700 uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 shadow-sm">
+            {tag.cleanName}
+          </span>
+        ));
+      }
+
+      return null;
+    })()}
+  </div>
+</div>

@@ -6,6 +6,7 @@ import { resolveLocalizedAsset, resolveLocalizedImage } from '../../utils/assetR
 import { transformPbContent } from '../../utils/contentTransformer';
 import { renderContentAsHtml } from '../../utils/serialization';
 import ShareButtons from '../../components/ShareButtons.astro';
+import PostTags from '../../components/PostTags.astro';
 import Recommendations from '../../components/Recommendations.astro';
 import { getAllPosts } from '../../lib/ghost-utils';
 import { mapPbRecord } from '../../lib/pb-worksheet-mapper';
@@ -63,6 +64,8 @@ export async function getStaticPaths() {
 }
 
 const { worksheet, recommendations = [] } = Astro.props as { worksheet: any; recommendations: any[] };
+
+const mappedWorksheet = await mapPbRecord(worksheet);
 
 let content = typeof worksheet.content === 'string' ? JSON.parse(worksheet.content || '{}') : (worksheet.content || {});
 
@@ -149,8 +152,21 @@ const contentFallbackHtml = renderContentAsHtml(content);
     })();
   </script>
 
-  <article class="max-w-6xl mx-auto bg-white p-4 sm:p-6 sm:rounded-2xl sm:shadow-sm sm:border border-slate-100" data-pagefind-body>
-    <ShareButtons title={worksheet.title} description={worksheet.seo || worksheet.description} />
+  <article class="relative max-w-6xl mx-auto bg-white p-4 sm:p-6 sm:rounded-2xl sm:shadow-sm sm:border border-slate-100" data-pagefind-body>
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full mb-4 sm:mb-6 gap-2 sm:gap-0">
+      <div class="order-1 sm:order-0 w-full sm:w-auto flex justify-center sm:justify-start">
+        <ShareButtons title={worksheet.title} description={worksheet.seo || worksheet.description} class="justify-center! sm:justify-start! m-0!" />
+      </div>
+      <div class="order-2 sm:order-0 w-full sm:w-auto flex items-center justify-center sm:justify-end border-t border-slate-100 sm:border-0 pt-2 sm:pt-0 gap-3">
+        <PostTags post={mappedWorksheet} lang={currentLang} />
+        <button onclick="window.history.length > 1 ? window.history.back() : window.location.href = '/';" class="hidden sm:flex w-8 h-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors" title="Close Lesson">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <button onclick="window.history.length > 1 ? window.history.back() : window.location.href = '/';" class="sm:hidden absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors z-10" title="Close Lesson">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
     {imageObj ? (
       <Image src={imageObj} alt="" data-pagefind-meta="image[src]" class="hidden" width={1200} height={630} />
     ) : imageUrl && (
