@@ -229,6 +229,9 @@ const finalScripts = Array.from(scriptsToLoad);
   .worksheet-content :where(ul) {
     @apply list-disc list-inside mb-4 text-slate-700 space-y-2;
   }
+  .worksheet-content :where(a) {
+    @apply text-blue-600 underline underline-offset-2 hover:text-blue-800;
+  }
   .worksheet-content :is(tj-info-gap, tj-chapter-book, tj-quiz-element, tj-speed-review, tj-grammar-hearts, tj-reader, tj-listening, tj-pronunciation) {
     @apply my-6 block w-full mx-auto;
   }
