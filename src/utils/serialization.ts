@@ -33,6 +33,13 @@ export function renderContentAsHtml(obj: any, depth = 0): string {
   }
 
   // Handle objects
+  if (obj.type === 'image' && obj.attrs && obj.attrs.src) {
+    const src = obj.attrs.src;
+    const alt = obj.attrs.alt || '';
+    const title = obj.attrs.title ? ` title="${obj.attrs.title}"` : '';
+    return `<img src="${src}" alt="${alt}"${title} class="max-w-full rounded-xl my-4" loading="lazy" />`;
+  }
+
   let html = '';
   const entries = Object.entries(obj);
   
