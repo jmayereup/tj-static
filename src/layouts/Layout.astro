@@ -53,7 +53,7 @@ const socialImageURL = optimizedImage
     <title>{title}</title>
     <link rel="canonical" href={canonicalURL} />
     <meta name="title" content={title} />
-    <meta name="description" content={description} />
+    <meta name="description" content={description.slice(0, 160) + ".."} />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content={article ? 'article' : 'website'} />

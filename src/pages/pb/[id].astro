@@ -95,7 +95,7 @@ const currentLang = (worksheet.language || 'English').toLowerCase();
 const contentFallbackHtml = renderContentAsHtml(content);
 ---
 <Layout 
-  title={`${worksheet?.title || 'App'} | Teacher Jake App`} 
+  title={`${worksheet?.title || 'Teacher Jake'}`} 
   currentLang={currentLang} 
   currentTag="worksheet"
   description={worksheet?.seo || worksheet?.description}

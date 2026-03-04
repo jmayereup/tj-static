@@ -1,5 +1,4 @@
 import type { RecordModel } from "pocketbase";
-import { pb } from "./pocketbase";
 import { resolveLocalizedImage } from "../utils/assetResolver";
 
 /**
@@ -25,6 +24,10 @@ export async function mapPbRecord(record: RecordModel): Promise<Record<string, a
 
   if (record.image) {
     featureImage = await resolveLocalizedImage('pb', record.id, record.image);
+  }
+
+  if (!featureImage && record.lessonType === "word-blaster") {
+    featureImage = "/images/word-blaster-placeholder.png";
   }
 
   if (!featureImage && record.videoUrl) {
@@ -56,6 +59,7 @@ export async function mapPbRecord(record: RecordModel): Promise<Record<string, a
       { name: level },
       ...(record.tags || []).map((t: string) => ({ name: t })),
       { name: language },
+      ...(record.lessonType === "word-blaster" ? [{ name: "game" }] : []),
     ],
   };
 }
