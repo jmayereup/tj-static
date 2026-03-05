@@ -15,12 +15,15 @@ const { currentLang, currentTag = 'all' } = Astro.props;
       <a 
         href={href}
         data-astro-prefetch="hover"
-        class={`filter-link whitespace-nowrap px-3 py-1 rounded-full text-sm font-bold transition-all duration-300 ${
+        class={`filter-link whitespace-nowrap px-3 py-1 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
           isActive 
-            ? 'active-filter bg-white text-[#005522] border border-white scale-105' 
+            ? 'active-filter text-white bg-green-900 border-green-800 border-2' 
             : 'text-emerald-50 border border-transparent hover:border-white/50 hover:bg-white/20'
         }`}
       >
+        {filter.icon && (
+          <img src={filter.icon} alt="" class="w-4 h-4 invert opacity-80" />
+        )}
         {filter.label}
       </a>
     );
