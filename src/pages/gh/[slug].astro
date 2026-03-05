@@ -155,7 +155,7 @@ const finalScripts = Array.from(scriptsToLoad);
   title={`${post.title} | Teacher Jake Worksheets`} 
   currentLang={currentLang}
   description={post.excerpt || post.custom_excerpt}
-  image={ogImage}
+  image={featureImageObj || post.feature_image || ogImage}
   article={true}
 >
   <Fragment slot="head">

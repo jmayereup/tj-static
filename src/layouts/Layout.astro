@@ -34,8 +34,8 @@ const optimizedImage = image ? await getImage({
 }) : null;
 
 const socialImageURL = optimizedImage 
-  ? new URL(optimizedImage.src, Astro.url)
-  : new URL("/tj-logo-big-brighter.png", Astro.url);
+  ? new URL(optimizedImage.src, Astro.site || Astro.url)
+  : new URL("/tj-logo-big-brighter.png", Astro.site || Astro.url);
 ---
 <!doctype html>
 <html lang={isoLang}>
