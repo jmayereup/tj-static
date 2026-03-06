@@ -1,48 +1,67 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import { Image, getImage } from 'astro:assets';
-import { pb } from '../../lib/pocketbase';
-import { resolveLocalizedAsset, resolveLocalizedImage } from '../../utils/assetResolver';
-import { transformPbContent } from '../../utils/contentTransformer';
-import { renderContentAsHtml } from '../../utils/serialization';
-import ShareButtons from '../../components/ShareButtons.astro';
-import PostTags from '../../components/PostTags.astro';
-import Recommendations from '../../components/Recommendations.astro';
-import { getAllPosts } from '../../lib/ghost-utils';
-import { mapPbRecord } from '../../lib/pb-worksheet-mapper';
+import Layout from "../../layouts/Layout.astro";
+import { Image, getImage } from "astro:assets";
+import { pb } from "../../lib/pocketbase";
+import {
+  resolveLocalizedAsset,
+  resolveLocalizedImage,
+} from "../../utils/assetResolver";
+import { transformPbContent } from "../../utils/contentTransformer";
+import { renderContentAsHtml } from "../../utils/serialization";
+import ShareButtons from "../../components/ShareButtons.astro";
+import PostTags from "../../components/PostTags.astro";
+import Recommendations from "../../components/Recommendations.astro";
+import { getAllPosts } from "../../lib/ghost-utils";
+import { mapPbRecord } from "../../lib/pb-worksheet-mapper";
 
 export async function getStaticPaths() {
   try {
-    const ghostPosts = await getAllPosts({ include: ['tags'] });
-    const normalizedGhost = ghostPosts.map(p => ({ ...p, type: 'gh', source: 'ghost' }));
+    const ghostPosts = await getAllPosts({ include: ["tags"] });
+    const normalizedGhost = ghostPosts.map((p) => ({
+      ...p,
+      type: "gh",
+      source: "ghost",
+    }));
 
-    const worksheets = await pb.collection('worksheets').getFullList();
+    const worksheets = await pb.collection("worksheets").getFullList();
     const normalizedPb = await Promise.all(worksheets.map(mapPbRecord));
-    
+
     const allNormalized = [...normalizedGhost, ...normalizedPb];
 
-    return worksheets.map(worksheet => {
-      const lang = (worksheet.language || 'english').toLowerCase();
+    return worksheets.map((worksheet) => {
+      const lang = (worksheet.language || "english").toLowerCase();
       const category = worksheet.lessonType?.toLowerCase();
 
       const recommendations = allNormalized
-        .filter(p => {
+        .filter((p) => {
           if (p.id === worksheet.id) return false;
-          
-          const pTags = p.tags?.map((t: any) => t.slug || t.name?.toLowerCase()) || [];
+
+          const pTags =
+            p.tags?.map((t: any) => t.slug || t.name?.toLowerCase()) || [];
           const sameLang = pTags.includes(lang) || p.language === lang;
-          
+
           let sameCategory = false;
           if (category) {
-            if (category === 'bilingual' || category === 'lbl-reader' || category === 'blb') {
-               sameCategory = pTags.some((t: string) => ['bilingual', 'lbl-reader', 'blb'].includes(t));
+            if (
+              category === "bilingual" ||
+              category === "lbl-reader" ||
+              category === "blb"
+            ) {
+              sameCategory = pTags.some((t: string) =>
+                ["bilingual", "lbl-reader", "blb"].includes(t)
+              );
             } else {
-               const normalizedCategory = category === 'information-gap' ? 'speaking' : 
-                                         category === 'focused-reading' ? 'book' : category;
-               sameCategory = pTags.includes(normalizedCategory) || p.lessonType === category;
+              const normalizedCategory =
+                category === "information-gap"
+                  ? "speaking"
+                  : category === "focused-reading"
+                  ? "book"
+                  : category;
+              sameCategory =
+                pTags.includes(normalizedCategory) || p.lessonType === category;
             }
           }
-          
+
           return sameLang && sameCategory;
         })
         .sort((a, b) => {
@@ -58,16 +77,24 @@ export async function getStaticPaths() {
       };
     });
   } catch (error) {
-    console.warn("Failed to fetch from Pocketbase. Make sure your Pocketbase server is running.");
+    console.warn(
+      "Failed to fetch from Pocketbase. Make sure your Pocketbase server is running."
+    );
     return [];
   }
 }
 
-const { worksheet, recommendations = [] } = Astro.props as { worksheet: any; recommendations: any[] };
+const { worksheet, recommendations = [] } = Astro.props as {
+  worksheet: any;
+  recommendations: any[];
+};
 
 const mappedWorksheet = await mapPbRecord(worksheet);
 
-let content = typeof worksheet.content === 'string' ? JSON.parse(worksheet.content || '{}') : (worksheet.content || {});
+let content =
+  typeof worksheet.content === "string"
+    ? JSON.parse(worksheet.content || "{}")
+    : worksheet.content || {};
 
 // Transform content at build time (optimizes images)
 content = await transformPbContent(content, worksheet.id);
@@ -75,8 +102,12 @@ content = await transformPbContent(content, worksheet.id);
 let imageUrl: any = undefined;
 let imageObj: any = undefined;
 if (worksheet.image) {
-  const resolved = await resolveLocalizedImage('pb', worksheet.id, worksheet.image);
-  if (resolved && typeof resolved !== 'string') {
+  const resolved = await resolveLocalizedImage(
+    "pb",
+    worksheet.id,
+    worksheet.image
+  );
+  if (resolved && typeof resolved !== "string") {
     imageObj = resolved;
     const optimized = await getImage({ src: resolved, width: 1200 });
     imageUrl = optimized.src;
@@ -85,41 +116,61 @@ if (worksheet.image) {
   }
 }
 
-let audioFileUrl = worksheet.audioFile ? resolveLocalizedAsset('pb', worksheet.id, worksheet.audioFile) : undefined;
+let audioFileUrl = worksheet.audioFile
+  ? resolveLocalizedAsset("pb", worksheet.id, worksheet.audioFile)
+  : undefined;
 
 const parsedLesson = {
   ...worksheet,
   content,
   image: imageUrl,
-  audioFile: audioFileUrl
+  audioFile: audioFileUrl,
 };
 
-const currentLang = (worksheet.language || 'English').toLowerCase();
+const currentLang = (worksheet.language || "English").toLowerCase();
 const contentFallbackHtml = renderContentAsHtml(content);
 ---
-<Layout 
-  title={`${worksheet?.title || 'Teacher Jake'}`} 
-  currentLang={currentLang} 
+
+<Layout
+  title={`${worksheet?.title || "Teacher Jake"}`}
+  currentLang={currentLang}
   currentTag="worksheet"
   description={worksheet?.seo || worksheet?.description}
   image={imageObj || imageUrl}
   article={true}
 >
-
   <div id="webview-warning" class="hidden mb-6 mx-auto max-w-6xl">
-    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500">
-      <div class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    <div
+      class="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 shadow-sm animate-in fade-in slide-in-from-top-4 duration-500"
+    >
+      <div
+        class="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0"
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          ></path>
         </svg>
       </div>
       <div class="grow text-center sm:text-left">
-        <h3 class="text-amber-900 font-bold text-lg mb-1">In-App Browser Warning</h3>
+        <h3 class="text-amber-900 font-bold text-lg mb-1">
+          In-App Browser Warning
+        </h3>
         <p class="text-amber-800 text-sm leading-relaxed">
-          Some features (like Text-to-Speech) may not work correctly in this browser. For the best experience, please open this page in Chrome or your default browser.
+          Some features (like Text-to-Speech) may not work correctly in this
+          browser. For the best experience, please open this page in Chrome or
+          your default browser.
         </p>
       </div>
-      <a 
+      <a
         id="browser-intent-link"
         href="#"
         class="whitespace-nowrap bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-xl transition-all duration-300 shadow-md hover:shadow-lg active:scale-95 text-center w-full sm:w-auto"
@@ -130,21 +181,25 @@ const contentFallbackHtml = renderContentAsHtml(content);
   </div>
 
   <script is:inline>
-    (function() {
+    (function () {
       const ua = navigator.userAgent;
       const isAndroid = /Android/i.test(ua);
-      const isWebView = /wv/i.test(ua) || (isAndroid && /Version\/[\d.]+/i.test(ua) && !/Chrome\/[\d.]+/i.test(ua));
-      
+      const isWebView =
+        /wv/i.test(ua) ||
+        (isAndroid &&
+          /Version\/[\d.]+/i.test(ua) &&
+          !/Chrome\/[\d.]+/i.test(ua));
+
       if (isAndroid && isWebView) {
-        const warning = document.getElementById('webview-warning');
+        const warning = document.getElementById("webview-warning");
         if (warning) {
-          warning.classList.remove('hidden');
-          
-          const intentLink = document.getElementById('browser-intent-link');
+          warning.classList.remove("hidden");
+
+          const intentLink = document.getElementById("browser-intent-link");
           if (intentLink) {
             // Construct Android Intent link to open in external browser
             const url = window.location.href;
-            const cleanUrl = url.replace(/^https?:\/\//, '');
+            const cleanUrl = url.replace(/^https?:\/\//, "");
             intentLink.href = `intent://${cleanUrl}#Intent;scheme=https;action=android.intent.action.VIEW;end`;
           }
         }
@@ -152,45 +207,103 @@ const contentFallbackHtml = renderContentAsHtml(content);
     })();
   </script>
 
-  <article class="relative max-w-6xl mx-auto bg-white p-4 sm:p-6 sm:rounded-2xl sm:shadow-sm sm:border border-slate-100" data-pagefind-body>
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center w-full mb-4 sm:mb-6 gap-2 sm:gap-0">
-      <div class="order-1 sm:order-0 w-full sm:w-auto flex justify-center sm:justify-start">
-        <ShareButtons title={worksheet.title} description={worksheet.seo || worksheet.description} class="justify-center! sm:justify-start! m-0!" />
+  <article
+    class="relative max-w-6xl mx-auto bg-white sm:rounded-2xl sm:shadow-sm sm:border border-slate-100"
+    data-pagefind-body
+  >
+    <div
+      class="flex flex-col justify-center sm:flex-row sm:justify-between sm:space-between sm:items-center w-full pr-10 pl-4 gap-2"
+    >
+      <div class="flex w-full justify-center sm:justify-start">
+        <ShareButtons
+          title={worksheet.title}
+          description={worksheet.seo || worksheet.description}
+        />
       </div>
-      <div class="order-2 sm:order-0 w-full sm:w-auto flex items-center justify-center sm:justify-end border-t border-slate-100 sm:border-0 pt-2 sm:pt-0 gap-3">
+      <div class="flex mr-6 w-full justify-center sm:justify-end">
         <PostTags post={mappedWorksheet} lang={currentLang} />
-        <button onclick="window.history.length > 1 ? window.history.back() : window.location.href = '/';" class="hidden sm:flex w-8 h-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors" title="Close Lesson">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
       </div>
-      <button onclick="window.history.length > 1 ? window.history.back() : window.location.href = '/';" class="sm:hidden absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors z-10" title="Close Lesson">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
     </div>
-    {imageObj ? (
-      <Image src={imageObj} alt="" data-pagefind-meta="image[src]" class="hidden" width={1200} height={630} />
-    ) : imageUrl && (
-      <img src={imageUrl} alt="" data-pagefind-meta="image[src]" class="hidden" width="1200" height="630" />
-    )}
-
+  <button
+    onclick="window.history.length > 1 ? window.history.back() : window.location.href = '/';"
+    class="flex justify-center absolute top-2 right-2 w-8 h-8 items-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors"
+    title="Close Lesson"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      ><line x1="18" y1="6" x2="6" y2="18"></line><line
+        x1="6"
+        y1="6"
+        x2="18"
+        y2="18"></line>
+    </svg>
+  </button>
+    {
+      imageObj ? (
+        <Image
+          src={imageObj}
+          alt=""
+          data-pagefind-meta="image[src]"
+          class="hidden"
+          width={1200}
+          height={630}
+        />
+      ) : (
+        imageUrl && (
+          <img
+            src={imageUrl}
+            alt=""
+            data-pagefind-meta="image[src]"
+            class="hidden"
+            width="1200"
+            height="630"
+          />
+        )
+      )
+    }
 
     <!-- Web Component Wrapper -->
     <tj-pocketbase-worksheet>
-      <script type="application/json" set:html={JSON.stringify(parsedLesson)} />
+      <script type="application/json" set:html={JSON.stringify(parsedLesson)}
+      ></script>
     </tj-pocketbase-worksheet>
 
     <!-- Fallback Content (Server Rendered) -->
     <div class="tj-fallback p-4 sm:p-8">
-      <h1 class="text-3xl font-extrabold text-blue-600 mb-4">{worksheet.title}</h1>
-      {worksheet.seo && <p class="text-slate-600 italic mb-6 text-lg">{worksheet.seo}</p>}
-      {!worksheet.seo && worksheet.description && <p class="text-slate-600 italic mb-6 text-lg">{worksheet.description}</p>}
-      
+      <h1 class="text-3xl font-extrabold text-blue-600 mb-4">
+        {worksheet.title}
+      </h1>
+      {
+        worksheet.seo && (
+          <p class="text-slate-600 italic mb-6 text-lg">{worksheet.seo}</p>
+        )
+      }
+      {
+        !worksheet.seo && worksheet.description && (
+          <p class="text-slate-600 italic mb-6 text-lg">
+            {worksheet.description}
+          </p>
+        )
+      }
+
       <div class="fallback-json-content prose-slate prose-lg max-w-none">
         <Fragment set:html={contentFallbackHtml} />
       </div>
     </div>
 
-    {recommendations.length > 0 && <Recommendations posts={recommendations} lang={currentLang} />}
+    {
+      recommendations.length > 0 && (
+        <Recommendations posts={recommendations} lang={currentLang} />
+      )
+    }
   </article>
 </Layout>
 <style is:global>
@@ -207,15 +320,19 @@ const contentFallbackHtml = renderContentAsHtml(content);
   }
 </style>
 
-<link rel="stylesheet" href="https://language-learning-worksheets.pages.dev/wc/language-learning-worksheets.css">
+<link
+  rel="stylesheet"
+  href="https://language-learning-worksheets.pages.dev/wc/language-learning-worksheets.css"
+/>
 
 <script is:inline>
   // Ensure the script is only loaded when component is used
-  if (!customElements.get('tj-pocketbase-worksheet')) {
-     const script = document.createElement('script');
-     script.src = 'https://language-learning-worksheets.pages.dev/wc/tj-pocketbase-worksheet.es.js'; 
-     script.type = 'module';
-     script.defer = true;
-     document.head.appendChild(script);
+  if (!customElements.get("tj-pocketbase-worksheet")) {
+    const script = document.createElement("script");
+    script.src =
+      "https://language-learning-worksheets.pages.dev/wc/tj-pocketbase-worksheet.es.js";
+    script.type = "module";
+    script.defer = true;
+    document.head.appendChild(script);
   }
 </script>
