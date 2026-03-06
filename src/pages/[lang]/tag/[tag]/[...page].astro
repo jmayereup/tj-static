@@ -38,11 +38,14 @@ export async function getStaticPaths({ paginate }: any) {
       ...worksheetTopics
     ];
 
-    for (const category of allTags) {
+      for (const category of allTags) {
       // 1. Ghost Content (match by tag slug)
       let filteredItems = ghostPosts.filter((post: any) => {
         if (category.id === 'bilingual') {
           return post.tags?.some((t: any) => t.slug === 'lbl-reader' || t.slug === 'blb');
+        }
+        if (category.id === 'speaking') {
+          return post.tags?.some((t: any) => t.slug === 'speaking' || t.slug === 'pronunciation');
         }
         return post.tags?.some((t: any) => t.slug === category.id);
       });
@@ -56,12 +59,27 @@ export async function getStaticPaths({ paginate }: any) {
           category.id === 'speaking' ? 'information-gap' :
           category.id === 'book' ? 'focused-reading' : 'worksheet';
         
-        const matchingPb = allPbWorksheets.filter(
+        let matchingPb = allPbWorksheets.filter(
           (ws) => ws.language === lang && ws.lessonType === typeMatch
         );
+
+        // For speaking, also include PB items tagged with pronunciation
+        if (category.id === 'speaking') {
+          const pronunPb = allPbWorksheets.filter(
+            (ws) => ws.language === lang && ws.tags?.some((t: any) => t.name.toLowerCase() === 'pronunciation')
+          );
+          // Avoid duplicates if any
+          const existingIds = new Set(matchingPb.map(ws => ws.id));
+          for (const ws of pronunPb) {
+            if (!existingIds.has(ws.id)) {
+              matchingPb.push(ws);
+            }
+          }
+        }
+
         filteredItems = [...filteredItems, ...matchingPb];
       } else {
-        // Assume it's a content topic tag (science, history, etc.)
+        // Assume it's a content topic tag (science, history, course, etc.)
         const matchingPb = allPbWorksheets.filter(
           (ws) => ws.language === lang && ws.tags?.some((t: any) => t.name.toLowerCase() === category.id.toLowerCase())
         );

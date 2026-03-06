@@ -6,7 +6,7 @@ export const CATEGORY_FILTERS = [
   { label: 'Games', id: 'grammar-game' },
   { label: 'Speaking', id: 'speaking' },
   { label: 'Listening', id: 'listening' },
-  { label: 'Pronunciation', id: 'pronunciation' },
+  { label: 'Courses', id: 'course', icon: '/images/files-svgrepo-com.svg' },
 ];
 
 export const WORKSHEET_TOPICS = [

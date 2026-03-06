@@ -35,31 +35,48 @@ export async function getStaticPaths({ paginate }: any) {
 
     const allTags = [...filterCategories, ...worksheetTopics];
 
-    for (const category of allTags) {
-      let categoryGhost = ghostPosts.filter((post: any) => {
-        if (category.id === 'bilingual') {
-          return post.tags?.some((t: any) => t.slug === 'lbl-reader' || t.slug === 'blb');
-        }
-        return post.tags?.some((t: any) => t.slug === category.id);
-      });
+      for (const category of allTags) {
+        let categoryGhost = ghostPosts.filter((post: any) => {
+          if (category.id === 'bilingual') {
+            return post.tags?.some((t: any) => t.slug === 'lbl-reader' || t.slug === 'blb');
+          }
+          if (category.id === 'speaking') {
+            return post.tags?.some((t: any) => t.slug === 'speaking' || t.slug === 'pronunciation');
+          }
+          return post.tags?.some((t: any) => t.slug === category.id);
+        });
 
-      // PB: match by lessonType or Tag
-      let categoryPb: any[] = [];
-      const isLessonType = ["speaking", "worksheet", "book"].includes(category.id);
-      
-      if (isLessonType) {
-        const typeMatch =
-          category.id === "speaking" ? "information-gap" :
-          category.id === "book" ? "focused-reading" : "worksheet";
-        categoryPb = allPbWorksheets.filter(
-          (ws) => ws.language === lang && ws.lessonType === typeMatch
-        );
-      } else {
-        // Topic tag
-        categoryPb = allPbWorksheets.filter(
-          (ws) => ws.language === lang && ws.tags?.some((t: any) => t.name.toLowerCase() === category.id.toLowerCase())
-        );
-      }
+        // PB: match by lessonType or Tag
+        let categoryPb: any[] = [];
+        const isLessonType = ["speaking", "worksheet", "book"].includes(category.id);
+        
+        if (isLessonType) {
+          const typeMatch =
+            category.id === "speaking" ? "information-gap" :
+            category.id === "book" ? "focused-reading" : "worksheet";
+          categoryPb = allPbWorksheets.filter(
+            (ws) => ws.language === lang && ws.lessonType === typeMatch
+          );
+
+          // For speaking, also include PB items tagged with pronunciation
+          if (category.id === 'speaking') {
+            const pronunPb = allPbWorksheets.filter(
+              (ws) => ws.language === lang && ws.tags?.some((t: any) => t.name.toLowerCase() === 'pronunciation')
+            );
+            // Avoid duplicates
+            const existingIds = new Set(categoryPb.map(ws => ws.id));
+            for (const ws of pronunPb) {
+              if (!existingIds.has(ws.id)) {
+                categoryPb.push(ws);
+              }
+            }
+          }
+        } else {
+          // Topic tag (including course)
+          categoryPb = allPbWorksheets.filter(
+            (ws) => ws.language === lang && ws.tags?.some((t: any) => t.name.toLowerCase() === category.id.toLowerCase())
+          );
+        }
 
       for (const level of levels) {
         const levelGhost = categoryGhost.filter(
