@@ -27,7 +27,7 @@ const {
   
   <!-- Copy Link -->
   <button
-    id="copy-link-btn"
+    data-share-action="copy"
     class="inline-flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-medium transition-all active:scale-95 group focus:outline-none focus:ring-2 focus:ring-slate-300"
     title="Copy link to clipboard"
   >
@@ -37,7 +37,7 @@ const {
 
   <!-- Instagram -->
   <button
-    id="share-instagram"
+    data-share-action="instagram"
     class="inline-flex items-center gap-2 px-3 py-2 bg-gradient-to-tr from-[#f9ce34] via-[#ee2a7b] to-[#6228d7] hover:opacity-90 text-white rounded-lg text-sm font-medium transition-all active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#ee2a7b]"
     title="Share on Instagram"
   >
@@ -46,7 +46,7 @@ const {
 
   <!-- Facebook -->
   <a
-    id="share-facebook"
+    data-share-action="facebook"
     href="#"
     target="_blank"
     rel="noopener noreferrer"
@@ -58,7 +58,7 @@ const {
 
   <!-- Web Share API (Mobile native share) -->
   <button
-    id="native-share-btn"
+    data-share-action="native"
     class="hidden items-center gap-2 px-3 py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-lg text-sm font-medium transition-all active:scale-95 group focus:outline-none focus:ring-2 focus:ring-emerald-300"
     title="More share options"
   >
@@ -68,20 +68,26 @@ const {
 </div>
 
 <script>
+  // One AbortController per page — aborted on the next page-load to strip all listeners cleanly.
+  let shareAbortController: AbortController | null = null;
+
   function initShareButtons() {
+    // Tear down all listeners from the previous page before re-registering.
+    shareAbortController?.abort();
+    shareAbortController = new AbortController();
+    const { signal } = shareAbortController;
+
     const containers = document.querySelectorAll('[data-share-container]');
-    
+
     containers.forEach(container => {
       const title = container.getAttribute('data-share-title');
-      const description = container.getAttribute('data-share-description');
       const propUrl = container.getAttribute('data-share-url');
       const url = propUrl || window.location.href;
-      
-      const encodedUrl = encodeURIComponent(url);
-      const encodedTitle = encodeURIComponent(title || '');
 
-      // Facebook
-      const facebook = container.querySelector('#share-facebook') as HTMLAnchorElement;
+      const encodedUrl = encodeURIComponent(url);
+
+      // Facebook — just set the href, no listener needed
+      const facebook = container.querySelector('[data-share-action="facebook"]') as HTMLAnchorElement;
       if (facebook) {
         facebook.href = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
       }
@@ -90,9 +96,6 @@ const {
       const performNativeShare = async () => {
         if ('share' in navigator) {
           try {
-            // Pass only the URL so each app builds its own link preview from OG metadata.
-            // Passing `text` alongside `url` causes Messenger (and others) to show the
-            // text content duplicated next to the link card, or to strip the text entirely.
             await navigator.share({ url });
           } catch (err) {
             if ((err as Error).name !== 'AbortError') {
@@ -102,68 +105,56 @@ const {
         }
       };
 
-      // Instagram (using Native Share if available)
-      const instagramBtn = container.querySelector('#share-instagram');
+      // Instagram (native share if available, otherwise copy link)
+      const instagramBtn = container.querySelector('[data-share-action="instagram"]');
       if (instagramBtn) {
         instagramBtn.addEventListener('click', async () => {
           if ('share' in navigator) {
             await performNativeShare();
           } else {
-            // Fallback: Copy link
             try {
-              const nav = navigator as any;
-              if (nav.clipboard) {
-                await nav.clipboard.writeText(url);
-                const originalTitle = instagramBtn.getAttribute('title');
-                instagramBtn.setAttribute('title', 'Link Copied!');
-                setTimeout(() => {
-                  instagramBtn.setAttribute('title', originalTitle || '');
-                }, 2000);
-              }
+              await (navigator as any).clipboard?.writeText(url);
+              const orig = instagramBtn.getAttribute('title');
+              instagramBtn.setAttribute('title', 'Link Copied!');
+              setTimeout(() => instagramBtn.setAttribute('title', orig || ''), 2000);
             } catch (err) {
               console.error('Failed to copy link:', err);
             }
           }
-        });
+        }, { signal });
       }
 
-      // Native Share ("More" button)
-      const nativeBtn = container.querySelector('#native-share-btn') as HTMLElement;
+      // Native Share ("More" button) — only shown when Web Share API is available
+      const nativeBtn = container.querySelector('[data-share-action="native"]') as HTMLElement;
       if (nativeBtn && 'share' in navigator) {
         nativeBtn.classList.remove('hidden');
         nativeBtn.classList.add('inline-flex');
-        nativeBtn.addEventListener('click', performNativeShare);
+        nativeBtn.addEventListener('click', performNativeShare, { signal });
       }
 
       // Copy Link
-      const copyBtn = container.querySelector('#copy-link-btn');
+      const copyBtn = container.querySelector('[data-share-action="copy"]');
       if (copyBtn) {
         copyBtn.addEventListener('click', async () => {
-          const nav = navigator as any;
-          if (nav.clipboard) {
-            try {
-              await nav.clipboard.writeText(url);
-              const btnText = copyBtn.querySelector('.btn-text');
-              const originalText = btnText ? btnText.textContent : '';
-              if (btnText) btnText.textContent = 'Copied!';
-              
-              copyBtn.classList.add('bg-emerald-100', 'text-emerald-800');
-              copyBtn.classList.remove('bg-slate-100', 'text-slate-700');
-              
-              setTimeout(() => {
-                if (btnText) btnText.textContent = originalText;
-                copyBtn.classList.remove('bg-emerald-100', 'text-emerald-800');
-                copyBtn.classList.add('bg-slate-100', 'text-slate-700');
-              }, 2000);
-            } catch (err) {
-              console.error('Failed to copy:', err);
-            }
+          try {
+            await (navigator as any).clipboard?.writeText(url);
+            const btnText = copyBtn.querySelector('.btn-text');
+            const originalText = btnText?.textContent ?? '';
+            if (btnText) btnText.textContent = 'Copied!';
+            copyBtn.classList.add('bg-emerald-100', 'text-emerald-800');
+            copyBtn.classList.remove('bg-slate-100', 'text-slate-700');
+            setTimeout(() => {
+              if (btnText) btnText.textContent = originalText;
+              copyBtn.classList.remove('bg-emerald-100', 'text-emerald-800');
+              copyBtn.classList.add('bg-slate-100', 'text-slate-700');
+            }, 2000);
+          } catch (err) {
+            console.error('Failed to copy:', err);
           }
-        });
+        }, { signal });
       }
     });
   }
 
-  // Initialize on page load and after swaps
   document.addEventListener('astro:page-load', initShareButtons);
 </script>

@@ -4,34 +4,18 @@
 <div id="search" class="pagefind-ui-container"></div>
 
 <script is:inline>
-  window.addEventListener('DOMContentLoaded', (event) => {
-    // We only initialize if the element exists and PagefindUI is loaded
-    // Note: Pagefind is a post-build tool, so this will only work in production/preview
+  // astro:page-load fires on both initial load and after view transitions
+  document.addEventListener('astro:page-load', () => {
     if (document.querySelector('#search') && typeof PagefindUI !== 'undefined') {
-      new PagefindUI({ 
-        element: "#search", 
+      const searchEl = document.querySelector('#search');
+      if (searchEl) searchEl.innerHTML = '';
+      new PagefindUI({
+        element: "#search",
         showSubResults: true,
         translations: {
           placeholder: "Search..."
         }
       });
-    }
-  });
-
-  // Handle Astro View Transitions
-  document.addEventListener('astro:page-load', () => {
-    if (document.querySelector('#search') && typeof PagefindUI !== 'undefined') {
-        // Clear existing to avoid double initialization if needed
-        const searchEl = document.querySelector('#search');
-        if (searchEl) searchEl.innerHTML = '';
-        
-        new PagefindUI({ 
-            element: "#search", 
-            showSubResults: true,
-            translations: {
-                placeholder: "Search..."
-            }
-        });
     }
   });
 </script>

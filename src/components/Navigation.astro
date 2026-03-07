@@ -80,15 +80,18 @@ const { currentLang = 'english', currentTag } = Astro.props;
 </nav>
 
 <script is:inline>
-  // Close details when clicking outside
-  document.addEventListener('click', (event) => {
-    const details = document.querySelector('.language-dropdown');
-    if (details && !details.contains(event.target)) {
-      details.removeAttribute('open');
-    }
-  });
+  // Register the click-outside listener only once (guard against accumulation across view transitions)
+  if (!window.__navClickListenerAttached) {
+    window.__navClickListenerAttached = true;
+    document.addEventListener('click', (event) => {
+      const details = document.querySelector('.language-dropdown');
+      if (details && !details.contains(event.target)) {
+        details.removeAttribute('open');
+      }
+    });
+  }
 
-  // Handle Astro View Transitions
+  // Close dropdown on each page transition
   document.addEventListener('astro:page-load', () => {
     const details = document.querySelector('.language-dropdown');
     if (details) {

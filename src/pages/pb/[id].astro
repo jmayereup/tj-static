@@ -28,7 +28,7 @@ export async function getStaticPaths() {
 
     const allNormalized = [...normalizedGhost, ...normalizedPb];
 
-    return worksheets.map((worksheet) => {
+    return worksheets.map((worksheet, idx) => {
       const lang = (worksheet.language || "english").toLowerCase();
       const category = worksheet.lessonType?.toLowerCase();
 
@@ -73,7 +73,7 @@ export async function getStaticPaths() {
 
       return {
         params: { id: worksheet.id },
-        props: { worksheet, recommendations },
+        props: { worksheet, mappedWorksheet: normalizedPb[idx], recommendations },
       };
     });
   } catch (error) {
@@ -84,12 +84,13 @@ export async function getStaticPaths() {
   }
 }
 
-const { worksheet, recommendations = [] } = Astro.props as {
+const { worksheet, mappedWorksheet, recommendations = [] } = Astro.props as {
   worksheet: any;
+  mappedWorksheet: any;
   recommendations: any[];
 };
 
-const mappedWorksheet = await mapPbRecord(worksheet);
+// mappedWorksheet was pre-computed in getStaticPaths — no second mapPbRecord call needed.
 
 let content =
   typeof worksheet.content === "string"
