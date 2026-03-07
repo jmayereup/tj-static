@@ -103,14 +103,12 @@ const { nextUrl } = Astro.props;
         if (!newNextUrl) {
           // All pages exhausted — show end message
           if (loader) loader.style.display = "none";
-          if (endMsg) {
-            endMsg.style.display = "block";
-          } else {
-            const p = document.createElement("p");
-            p.textContent = "✦ You've seen it all ✦";
-            p.className = "text-slate-400 text-sm font-medium tracking-wide";
-            sentinel!.appendChild(p);
-          }
+          // Remove any existing end messages to avoid duplicates
+          sentinel!.querySelectorAll("p").forEach((el) => el.remove());
+          const p = document.createElement("p");
+          p.textContent = "✦ You've seen it all ✦";
+          p.className = "text-slate-400 text-sm font-medium tracking-wide";
+          sentinel!.appendChild(p);
           observer.disconnect();
         }
       } catch (err) {
@@ -133,7 +131,6 @@ const { nextUrl } = Astro.props;
     observer.observe(sentinel);
   }
 
-  // Run on initial load and after Astro view transitions
-  initInfiniteScroll();
+  // astro:page-load fires on both initial load and after view transitions
   document.addEventListener("astro:page-load", initInfiniteScroll);
 </script>
