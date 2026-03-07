@@ -6,9 +6,6 @@ if (fs.existsSync('.env')) {
   process.loadEnvFile('.env');
 }
 
-// Environment variables from Node --env-file=.env or process.env
-const GHOST_URL = process.env.GHOST_API_URL || '';
-const GHOST_KEY = process.env.GHOST_CONTENT_API_KEY || '';
 const PB_URL = process.env.PUBLIC_POCKETBASE_URL || 'https://blog.teacherjake.com';
 
 const PUBLIC_DIR = path.join(process.cwd(), 'public');
@@ -60,51 +57,7 @@ function getFilenameFromUrl(url, id) {
   }
 }
 
-// 1. Ghost Asset Discovery
-async function syncGhostAssets() {
-  if (!GHOST_URL || !GHOST_KEY) return console.warn('Ghost credentials missing, skipping sync.');
-  
-  console.log('Syncing Ghost assets...');
-  const browseUrl = `${GHOST_URL}/ghost/api/content/posts/?key=${GHOST_KEY}&include=tags&limit=all&filter=published_at:%3E'2025-12-01T00:00:00Z'`;
-  
-  try {
-    const res = await fetch(browseUrl);
-    const data = await res.json();
-    const posts = data.posts || [];
 
-    for (const post of posts) {
-      if (post.feature_image) {
-        const filename = getFilenameFromUrl(post.feature_image, post.slug);
-        await downloadFile(post.feature_image, post.slug, filename);
-      }
-
-      if (post.html) {
-        const assetRegex = /(src|data-thumbnail|href)="([^">]+)"/g;
-        let match;
-        while ((match = assetRegex.exec(post.html)) !== null) {
-          const attr = match[1];
-          let url = match[2];
-          
-          if (url) {
-            if (attr === 'href' && !['/content/media/', '/content/images/', '/content/files/'].some(p => url.includes(p))) continue;
-            if (url.endsWith('.js') || url.includes('/scripts/')) continue;
-            if (url.includes('youtube.com/') || url.includes('youtu.be/')) continue;
-            
-            if (url.startsWith('/')) url = `${GHOST_URL}${url}`;
-            if (url.startsWith('http')) {
-              const filename = getFilenameFromUrl(url, post.slug);
-              await downloadFile(url, post.slug, filename);
-            }
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Ghost sync failed:', err);
-  }
-}
-
-// 2. PocketBase Asset Discovery
 async function syncPbAssets() {
   console.log('Syncing PocketBase assets...');
   const browseUrl = `${PB_URL}/api/collections/worksheets/records?perPage=500`;
@@ -142,7 +95,6 @@ async function syncPbAssets() {
 
 // Main execution
 (async () => {
-  await syncGhostAssets();
   await syncPbAssets();
   console.log('Asset sync complete.');
 })();

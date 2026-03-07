@@ -1,6 +1,5 @@
 ---
 import ListingPageLayout from "../../../../../../layouts/ListingPageLayout.astro";
-import { getAllPosts } from "../../../../../../lib/ghost-utils";
 import { LANGUAGES, CATEGORY_FILTERS, WORKSHEET_TOPICS, getLevelFromTags } from "../../../../../../utils/tags";
 import { pb } from "../../../../../../lib/pocketbase";
 import { mapPbRecord } from "../../../../../../lib/pb-worksheet-mapper";
@@ -22,70 +21,50 @@ export async function getStaticPaths({ paginate }: any) {
 
   for (const langObj of LANGUAGES) {
     const lang = langObj.code;
-    let ghostPosts: any[] = [];
-    try {
-      ghostPosts = await getAllPosts({ filter: `tag:${lang}`, include: ["tags"] });
-      ghostPosts = ghostPosts.map((post: any) => ({ ...post, source: "ghost" }));
-    } catch (e) {
-      console.error(`Failed to fetch Ghost posts for ${lang}`, e);
-    }
 
     const filterCategories = CATEGORY_FILTERS.filter((f: any) => f.id !== "all");
     const worksheetTopics = WORKSHEET_TOPICS;
-
     const allTags = [...filterCategories, ...worksheetTopics];
 
-      for (const category of allTags) {
-        let categoryGhost = ghostPosts.filter((post: any) => {
-          if (category.id === 'bilingual') {
-            return post.tags?.some((t: any) => t.slug === 'lbl-reader' || t.slug === 'blb');
-          }
-          if (category.id === 'speaking') {
-            return post.tags?.some((t: any) => t.slug === 'speaking' || t.slug === 'pronunciation');
-          }
-          return post.tags?.some((t: any) => t.slug === category.id);
-        });
+    for (const category of allTags) {
+      let categoryPb: any[] = [];
+      const isLessonType = ["speaking", "worksheet", "book"].includes(category.id);
 
-        // PB: match by lessonType or Tag
-        let categoryPb: any[] = [];
-        const isLessonType = ["speaking", "worksheet", "book"].includes(category.id);
-        
-        if (isLessonType) {
-          const typeMatch =
-            category.id === "speaking" ? "information-gap" :
-            category.id === "book" ? "focused-reading" : "worksheet";
-          categoryPb = allPbWorksheets.filter(
-            (ws) => ws.language === lang && ws.lessonType === typeMatch
+      if (isLessonType) {
+        const typeMatch =
+          category.id === "speaking" ? "information-gap" :
+          category.id === "book" ? "focused-reading" : "worksheet";
+        categoryPb = allPbWorksheets.filter(
+          (ws) => ws.language === lang && ws.lessonType === typeMatch
+        );
+        if (category.id === "speaking") {
+          const pronunPb = allPbWorksheets.filter(
+            (ws) => ws.language === lang && ws.tags?.some((t: any) => t.name?.toLowerCase() === "pronunciation")
           );
-
-          // For speaking, also include PB items tagged with pronunciation
-          if (category.id === 'speaking') {
-            const pronunPb = allPbWorksheets.filter(
-              (ws) => ws.language === lang && ws.tags?.some((t: any) => t.name.toLowerCase() === 'pronunciation')
-            );
-            // Avoid duplicates
-            const existingIds = new Set(categoryPb.map(ws => ws.id));
-            for (const ws of pronunPb) {
-              if (!existingIds.has(ws.id)) {
-                categoryPb.push(ws);
-              }
-            }
+          const existingIds = new Set(categoryPb.map(ws => ws.id));
+          for (const ws of pronunPb) {
+            if (!existingIds.has(ws.id)) categoryPb.push(ws);
           }
-        } else {
-          // Topic tag (including course)
-          categoryPb = allPbWorksheets.filter(
-            (ws) => ws.language === lang && ws.tags?.some((t: any) => t.name.toLowerCase() === category.id.toLowerCase())
-          );
         }
+      } else if (category.id === "bilingual") {
+        categoryPb = allPbWorksheets.filter(
+          (ws) => ws.language === lang && ws.tags?.some((t: any) =>
+            ["bilingual", "lbl-reader", "blb"].includes((t.name || t).toLowerCase())
+          )
+        );
+      } else {
+        categoryPb = allPbWorksheets.filter(
+          (ws) => ws.language === lang && ws.tags?.some((t: any) =>
+            (t.name || t).toLowerCase() === category.id.toLowerCase()
+          )
+        );
+      }
 
       for (const level of levels) {
-        const levelGhost = categoryGhost.filter(
-          (post: any) => getLevelFromTags(post.tags) === level
-        );
         const levelPb = categoryPb.filter(
           (ws) => (ws.level || "All").toLowerCase() === level
         );
-        const combined = [...levelGhost, ...levelPb].sort((a, b) => {
+        const combined = [...levelPb].sort((a, b) => {
           const da = new Date(a.published_at || a.created_at || 0).getTime();
           const db = new Date(b.published_at || b.created_at || 0).getTime();
           return db - da;

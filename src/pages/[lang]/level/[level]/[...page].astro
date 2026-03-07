@@ -1,6 +1,5 @@
 ---
 import ListingPageLayout from "../../../../layouts/ListingPageLayout.astro";
-import { getAllPosts } from "../../../../lib/ghost-utils";
 import { LANGUAGES, getLevelFromTags } from "../../../../utils/tags";
 import { pb } from "../../../../lib/pocketbase";
 import { mapPbRecord } from "../../../../lib/pb-worksheet-mapper";
@@ -22,24 +21,14 @@ export async function getStaticPaths({ paginate }: any) {
 
   for (const langObj of LANGUAGES) {
     const lang = langObj.code;
-    let ghostPosts: any[] = [];
-    try {
-      ghostPosts = await getAllPosts({ filter: `tag:${lang}`, include: ["tags"] });
-      ghostPosts = ghostPosts.map((post: any) => ({ ...post, source: "ghost" }));
-    } catch (e) {
-      console.error(`Failed to fetch Ghost posts for ${lang}`, e);
-    }
 
     const langPb = allPbWorksheets.filter((ws) => ws.language === lang);
 
     for (const level of levels) {
-      const levelGhost = ghostPosts.filter(
-        (post: any) => getLevelFromTags(post.tags) === level
-      );
       const levelPb = langPb.filter(
         (ws) => (ws.level || "All").toLowerCase() === level
       );
-      const combined = [...levelGhost, ...levelPb].sort((a, b) => {
+      const combined = [...levelPb].sort((a, b) => {
         const da = new Date(a.published_at || a.created_at || 0).getTime();
         const db = new Date(b.published_at || b.created_at || 0).getTime();
         return db - da;

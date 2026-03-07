@@ -2,7 +2,6 @@
 import Layout from '../layouts/Layout.astro';
 import { Image } from 'astro:assets';
 import logoImage from '../assets/tj-logo-big-brighter.png';
-import { getAllPosts } from "../lib/ghost-utils";
 import { pb } from "../lib/pocketbase";
 import { LANGUAGES } from "../utils/tags";
 import WorksheetCard from "../components/WorksheetCard.astro";
@@ -10,33 +9,12 @@ import { mapPbRecord } from "../lib/pb-worksheet-mapper";
 
 let recentPosts: any[] = [];
 try {
-  // Fetch Pocketbase worksheets
-  const records = await pb
+  // Fetch the 4 most recent English PocketBase worksheets
+  const { items: records } = await pb
     .collection("worksheets")
-    .getFullList({ sort: "-created" });
-  
-  const pbWorksheets = (await Promise.all(records.map(mapPbRecord)))
-    .filter((post) => post.language === "english");
+    .getList(1, 4, { sort: "-created", filter: "language = 'english'" });
 
-  // Fetch Ghost posts filtered by English tag
-  let ghostPosts: any[] = [];
-  try {
-    ghostPosts = await getAllPosts({
-      filter: "tag:english",
-      include: ["tags"],
-    });
-    ghostPosts = ghostPosts.map((post: any) => ({ ...post, type: "gh" }));
-  } catch (e) {
-    console.error(`Failed to fetch Ghost posts for home page`, e);
-  }
-
-  // Combine and sort
-  recentPosts = [...ghostPosts, ...pbWorksheets].sort((a, b) => {
-    const dateA = new Date(a.published_at || a.created_at || a.created || 0).getTime();
-    const dateB = new Date(b.published_at || b.created_at || b.created || 0).getTime();
-    return dateB - dateA;
-  }).slice(0, 4);
-
+  recentPosts = await Promise.all(records.map(mapPbRecord));
 } catch (e) {
   console.error("Error fetching recent posts for home page:", e);
 }

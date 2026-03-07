@@ -1,6 +1,5 @@
 ---
 import ListingPageLayout from "../../layouts/ListingPageLayout.astro";
-import { getAllPosts } from "../../lib/ghost-utils";
 import { LANGUAGES } from "../../utils/tags";
 import { pb } from "../../lib/pocketbase";
 import { mapPbRecord } from "../../lib/pb-worksheet-mapper";
@@ -20,16 +19,9 @@ export async function getStaticPaths({ paginate }: any) {
 
   for (const langObj of LANGUAGES) {
     const lang = langObj.code;
-    let ghostPosts: any[] = [];
-    try {
-      ghostPosts = await getAllPosts({ filter: `tag:${lang}`, include: ["tags"] });
-      ghostPosts = ghostPosts.map((post: any) => ({ ...post, type: "gh" }));
-    } catch (e) {
-      console.error(`Failed to fetch Ghost posts for ${lang}`, e);
-    }
 
     const langPb = allPbWorksheets.filter((ws) => ws.language === lang);
-    const combinedPosts = [...ghostPosts, ...langPb].sort((a, b) => {
+    const combinedPosts = [...langPb].sort((a, b) => {
       const da = new Date(a.published_at || a.created_at || 0).getTime();
       const db = new Date(b.published_at || b.created_at || 0).getTime();
       return db - da;
