@@ -106,7 +106,7 @@ async function fetchAllGhostPosts() {
 }
 
 // ─── Field derivation ─────────────────────────────────────────────────────────
-const KNOWN_LANGS = ['english', 'french', 'german', 'spanish', 'thai'];
+const KNOWN_LANGS = ['English', 'French', 'German', 'Spanish', 'Thai'];
 
 const COMPONENT_LESSON_TYPES = [
   { tags: ['lbl-reader'],                  html: 'tj-reader',         lessonType: 'focused-reading' },
@@ -123,7 +123,7 @@ function deriveFields(post) {
   const tagSlugs = (post.tags || []).map(t => (t.slug || '').toLowerCase());
   const tagNames = (post.tags || []).map(t => (t.name || '').toLowerCase());
 
-  const language = tagSlugs.find(s => KNOWN_LANGS.includes(s)) || 'english';
+  const language = tagSlugs.find(s => KNOWN_LANGS.includes(s)) || 'English';
 
   // Determine lessonType — check HTML for component tag, then fall back to post tags
   let lessonType = 'worksheets';
@@ -170,13 +170,13 @@ async function createPbRecord(token, post) {
 
   const body = {
     title:      post.title || 'Untitled',
-    slug:       post.slug,
+    slug:       contentTags,
     seo:        post.custom_excerpt || post.excerpt || '',
     html:       post.html || '',
     language,
     lessonType,
     level,
-    tags:       contentTags,
+    tags:       "general",
     // image field: PocketBase file fields can't be set via JSON on record creation
     // (need multipart upload). We set imageFilename as a hint for a follow-up step.
     // For now, we store the filename in a separate local map.
