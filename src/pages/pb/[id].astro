@@ -28,7 +28,7 @@ export async function getStaticPaths() {
 
     const allNormalized = [...normalizedGhost, ...normalizedPb];
 
-    return worksheets.map((worksheet, idx) => {
+    return worksheets.flatMap((worksheet, idx) => {
       const lang = (worksheet.language || "english").toLowerCase();
       const category = worksheet.lessonType?.toLowerCase();
 
@@ -71,10 +71,17 @@ export async function getStaticPaths() {
         })
         .slice(0, 3);
 
-      return {
-        params: { id: worksheet.id },
-        props: { worksheet, mappedWorksheet: normalizedPb[idx], recommendations },
-      };
+      const mapped = normalizedPb[idx];
+      return [
+        {
+          params: { id: worksheet.id },
+          props: { worksheet, mappedWorksheet: mapped, recommendations },
+        },
+        {
+          params: { id: mapped.slug },
+          props: { worksheet, mappedWorksheet: mapped, recommendations },
+        },
+      ];
     });
   } catch (error) {
     console.warn(

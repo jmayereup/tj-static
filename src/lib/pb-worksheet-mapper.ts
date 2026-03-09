@@ -1,5 +1,6 @@
 import type { RecordModel } from "pocketbase";
 import { resolveLocalizedImage } from "../utils/assetResolver";
+import { slugify } from "../utils/slugify";
 
 /**
  * Maps a raw PocketBase worksheet record into the normalized post shape
@@ -46,7 +47,7 @@ export async function mapPbRecord(record: RecordModel): Promise<Record<string, a
     type: "pb",
     source: "pocketbase",
     id: record.id,
-    slug: record.id,
+    slug: `${record.id}-${slugify(title)}`,
     title,
     custom_excerpt: description,
     feature_image: featureImage,
