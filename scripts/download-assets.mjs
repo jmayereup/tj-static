@@ -35,6 +35,17 @@ async function downloadFile(url, id, filename) {
   try {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Status ${res.status}`);
+
+    // Validate Content-Type for images — Ghost sometimes redirects broken image
+    // URLs to the site homepage (HTTP 200), which serves a JS bundle. Saving that
+    // as a .jpg would corrupt the asset and break Astro's image metadata processing.
+    if (isImg) {
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.startsWith('image/')) {
+        console.warn(`Skipping ${url}: expected image, got Content-Type "${contentType}"`);
+        return false;
+      }
+    }
     const buffer = await res.arrayBuffer();
     fs.writeFileSync(destPath, Buffer.from(buffer));
     console.log(`Downloaded ${isImg ? 'IMAGE' : 'ASSET'}: ${path.relative(process.cwd(), destPath)}`);
