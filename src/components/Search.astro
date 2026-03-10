@@ -9,11 +9,22 @@
     if (document.querySelector('#search') && typeof PagefindUI !== 'undefined') {
       const searchEl = document.querySelector('#search');
       if (searchEl) searchEl.innerHTML = '';
+      
+      const lang = document.documentElement.lang || 'en';
+      const langNames = {
+        'en': 'English',
+        'fr': 'French',
+        'de': 'German',
+        'es': 'Spanish',
+        'th': 'Thai'
+      };
+      const currentLangName = langNames[lang] || 'English';
+
       new PagefindUI({
         element: "#search",
         showSubResults: true,
         translations: {
-          placeholder: "Search..."
+          placeholder: `Search ${currentLangName}...`
         }
       });
     }
