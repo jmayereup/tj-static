@@ -117,6 +117,9 @@ async function syncGhostAssets() {
               
               if (url) {
                 if (attr === 'href' && !['/content/media/', '/content/images/', '/content/files/'].some(p => url.includes(p))) continue;
+                // For src= attributes, only download Ghost-hosted content (images/media in /content/)
+                // This avoids matching <script src="..."> CDN URLs.
+                if (attr === 'src' && !url.includes('/content/')) continue;
                 if (url.endsWith('.js') || url.includes('/scripts/')) continue;
                 if (url.includes('youtube.com/') || url.includes('youtu.be/')) continue;
                 
