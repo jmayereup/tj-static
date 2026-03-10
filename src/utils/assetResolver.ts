@@ -9,14 +9,34 @@ const pbImages = import.meta.glob<{ default: ImageMetadata }>('/src/assets/pocke
 
 export async function resolveLocalizedImage(type: 'gh' | 'pb', id: string, filename: string): Promise<ImageMetadata | string | undefined> {
   const subDir = type === 'gh' ? 'ghost-assets' : 'pocketbase-assets';
-  const seekPath = `/src/assets/${subDir}/${id}/${filename}`;
-  
   const glob = type === 'gh' ? ghostImages : pbImages;
-  const loader = glob[seekPath];
+  
+  // Try exact match first
+  let seekPath = `/src/assets/${subDir}/${id}/${filename}`;
+  let loader = glob[seekPath];
+  
+  // If no exact match and no extension, try common extensions
+  if (!loader && !filename.includes('.')) {
+    const extensions = ['.jpg', '.jpeg', '.png', '.webp'];
+    for (const ext of extensions) {
+      const altPath = `/src/assets/${subDir}/${id}/${filename}${ext}`;
+      if (glob[altPath]) {
+        seekPath = altPath;
+        loader = glob[altPath];
+        break;
+      }
+    }
+  }
   
   if (loader) {
     const mod = await loader();
     return mod.default;
+  }
+
+  // If it's an image but not found in src/assets, return undefined to trigger fallback to remote URL
+  const isImage = ['.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'].some(ext => filename.toLowerCase().endsWith(ext));
+  if (isImage) {
+    return undefined;
   }
 
   // Fallback to public folder path if not found in src/assets (e.g. if it's not an image)

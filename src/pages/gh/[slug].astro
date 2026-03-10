@@ -75,13 +75,17 @@ const post = { ...initialPost };
 
 let featureImageObj: any = undefined;
 if (post.feature_image) {
-    const resolved = await resolveLocalizedImage('gh', post.slug, post.feature_image.split('/').pop());
-    if (resolved && typeof resolved !== 'string') {
-        featureImageObj = resolved;
-        const optimized = await getImage({ src: resolved, width: 1200 });
-        post.feature_image = optimized.src;
-    } else {
-        post.feature_image = resolved;
+    const featureImageUrl = new URL(post.feature_image.startsWith('http') ? post.feature_image : `${import.meta.env.GHOST_API_URL}${post.feature_image}`);
+    const filename = featureImageUrl.pathname.split('/').pop();
+    if (filename) {
+        const resolved = await resolveLocalizedImage('gh', post.slug, filename);
+        if (resolved && typeof resolved !== 'string') {
+            featureImageObj = resolved;
+            const optimized = await getImage({ src: resolved, width: 1200 });
+            post.feature_image = optimized.src;
+        } else if (resolved) {
+            post.feature_image = resolved;
+        }
     }
 }
 

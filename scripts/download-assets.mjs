@@ -47,12 +47,22 @@ async function downloadFile(url, id, filename) {
 
 function getFilenameFromUrl(url, id) {
   try {
-    const pathname = new URL(url).pathname;
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
     let filename = path.basename(pathname);
+    
+    // Handle cases where the filename has no extension (common for hotlinks like Unsplash)
     if (!filename || !filename.includes('.')) {
-      if (pathname.includes('/media/') || pathname.includes('audio')) filename = `${id}.mp3`;
-      else if (pathname.includes('/files/')) filename = `${id}.pdf`;
-      else filename = `${id}.jpg`;
+      if (pathname.includes('/media/') || pathname.includes('audio')) {
+        filename = `${filename || id}.mp3`;
+      } else if (pathname.includes('/files/')) {
+        filename = `${filename || id}.pdf`;
+      } else {
+        // Try to get extension from query params (e.g. fm=jpg)
+        const fm = urlObj.searchParams.get('fm');
+        const ext = fm ? `.${fm}` : '.jpg';
+        filename = `${filename || id}${ext}`;
+      }
     }
     return filename;
   } catch {
@@ -65,40 +75,56 @@ async function syncGhostAssets() {
   if (!GHOST_URL || !GHOST_KEY) return console.warn('Ghost credentials missing, skipping sync.');
   
   console.log('Syncing Ghost assets...');
-  const browseUrl = `${GHOST_URL}/ghost/api/content/posts/?key=${GHOST_KEY}&include=tags&limit=all&filter=published_at:%3E'2025-12-01T00:00:00Z'`;
+  let page = 1;
+  let totalPages = 1;
+  let totalPosts = 0;
   
   try {
-    const res = await fetch(browseUrl);
-    const data = await res.json();
-    const posts = data.posts || [];
+    do {
+      const browseUrl = `${GHOST_URL}/ghost/api/content/posts/?key=${GHOST_KEY}&include=tags&limit=100&page=${page}`;
+      const res = await fetch(browseUrl);
+      const data = await res.json();
+      const posts = data.posts || [];
+      totalPages = data.meta.pagination.pages;
+      totalPosts += posts.length;
+      
+      console.log(`Syncing Ghost assets (page ${page}/${totalPages})...`);
 
-    for (const post of posts) {
-      if (post.feature_image) {
-        const filename = getFilenameFromUrl(post.feature_image, post.slug);
-        await downloadFile(post.feature_image, post.slug, filename);
-      }
+      for (const post of posts) {
+        try {
+          if (post.feature_image) {
+            const filename = getFilenameFromUrl(post.feature_image, post.slug);
+            await downloadFile(post.feature_image, post.slug, filename);
+          }
 
-      if (post.html) {
-        const assetRegex = /(src|data-thumbnail|href)="([^">]+)"/g;
-        let match;
-        while ((match = assetRegex.exec(post.html)) !== null) {
-          const attr = match[1];
-          let url = match[2];
-          
-          if (url) {
-            if (attr === 'href' && !['/content/media/', '/content/images/', '/content/files/'].some(p => url.includes(p))) continue;
-            if (url.endsWith('.js') || url.includes('/scripts/')) continue;
-            if (url.includes('youtube.com/') || url.includes('youtu.be/')) continue;
-            
-            if (url.startsWith('/')) url = `${GHOST_URL}${url}`;
-            if (url.startsWith('http')) {
-              const filename = getFilenameFromUrl(url, post.slug);
-              await downloadFile(url, post.slug, filename);
+          if (post.html) {
+            const assetRegex = /(src|data-thumbnail|href)="([^">]+)"/g;
+            let match;
+            while ((match = assetRegex.exec(post.html)) !== null) {
+              const attr = match[1];
+              let url = match[2];
+              
+              if (url) {
+                if (attr === 'href' && !['/content/media/', '/content/images/', '/content/files/'].some(p => url.includes(p))) continue;
+                if (url.endsWith('.js') || url.includes('/scripts/')) continue;
+                if (url.includes('youtube.com/') || url.includes('youtu.be/')) continue;
+                
+                if (url.startsWith('/')) url = `${GHOST_URL}${url}`;
+                if (url.startsWith('http')) {
+                  const filename = getFilenameFromUrl(url, post.slug);
+                  await downloadFile(url, post.slug, filename);
+                }
+              }
             }
           }
+        } catch (postErr) {
+          console.error(`Failed to sync assets for Ghost post ${post.slug}:`, postErr.message);
         }
       }
-    }
+      page++;
+    } while (page <= totalPages);
+    
+    console.log(`Total Ghost posts processed: ${totalPosts}`);
   } catch (err) {
     console.error('Ghost sync failed:', err);
   }

@@ -25,6 +25,9 @@ export async function mapPbRecord(record: RecordModel): Promise<Record<string, a
 
   if (record.image) {
     featureImage = await resolveLocalizedImage('pb', record.id, record.image);
+    if (!featureImage) {
+      featureImage = `${import.meta.env.PUBLIC_POCKETBASE_URL}/api/files/${record.collectionId}/${record.id}/${record.image}`;
+    }
   }
 
   if (!featureImage && record.lessonType === "word-blaster") {

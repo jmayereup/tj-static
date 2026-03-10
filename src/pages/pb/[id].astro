@@ -119,8 +119,10 @@ if (worksheet.image) {
     imageObj = resolved;
     const optimized = await getImage({ src: resolved, width: 1200 });
     imageUrl = optimized.src;
-  } else {
+  } else if (resolved) {
     imageUrl = resolved;
+  } else {
+    imageUrl = `${import.meta.env.PUBLIC_POCKETBASE_URL}/api/files/worksheets/${worksheet.id}/${worksheet.image}`;
   }
 }
 

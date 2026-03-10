@@ -24,6 +24,8 @@ export async function transformGhostHtml(html: string, postId: string, ghostUrl:
     if (resolved && typeof resolved !== 'string') {
       const optimized = await getImage({ src: resolved, width: 1200 }); // Optimize
       replacements[originalUrl] = optimized.src;
+    } else if (resolved) {
+      replacements[originalUrl] = resolved;
     }
   }
 
