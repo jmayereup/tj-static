@@ -272,9 +272,43 @@ const finalScripts = Array.from(scriptsToLoad);
     @apply mt-2;
   }
 
-  /* Ghost Audio Card Styles - Hidden as they are only used to upload assets for web components */
-  .worksheet-content .kg-audio-card {
-    display: none;
+  /* Custom Audio Card Styles */
+  .tj-audio-card {
+    @apply my-8 p-4 sm:p-6 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 max-w-2xl mx-auto;
+    background-image: linear-gradient(145deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.8) 100%);
+  }
+
+  .tj-audio-info {
+    @apply flex items-center gap-4 mb-4;
+  }
+
+  .tj-audio-thumbnail {
+    @apply w-12 h-12 sm:w-16 sm:h-16 rounded-xl object-cover shadow-sm bg-slate-100;
+  }
+
+  .tj-audio-placeholder {
+    @apply w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center bg-emerald-50 text-emerald-600 shadow-inner;
+  }
+
+  .tj-audio-meta {
+    @apply flex-1 min-w-0;
+  }
+
+  .tj-audio-title {
+    @apply block text-base sm:text-lg font-bold text-slate-800 truncate leading-tight;
+  }
+
+  .tj-audio-native {
+    @apply w-full h-10 mt-1;
+    /* Basic customization for supported browsers */
+  }
+
+  .tj-audio-native::-webkit-media-controls-panel {
+    @apply bg-slate-50;
+  }
+
+  .tj-audio-native::-webkit-media-controls-play-button {
+    @apply bg-emerald-600 rounded-full text-white;
   }
 
   /* Hide fallbacks once components are defined */
